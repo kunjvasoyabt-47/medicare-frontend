@@ -1,1 +1,66 @@
 @import "tailwindcss";
+
+@theme {
+  --color-brand-dark: #0f172a;
+  /* Deep organic curve radius for that specific look */
+  --radius-auth-card: 2.5rem; 
+  /* Using standard sans-serif to match the clean look in your images */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+@layer components {
+  .auth-page-wrapper {
+    /* min-h-screen for perfect vertical centering */
+    @apply min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 relative overflow-hidden;
+  }
+
+  /* Highlighted background layer (Lower z-index) */
+  .auth-bg-highlight {
+    @apply absolute -top-24 -right-24 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl z-0;
+  }
+
+  /* The Curved Floating Card (High z-index) */
+  .auth-card-floating {
+    @apply w-full max-w-[440px] bg-white rounded-[10px]  
+           /* Deep shadow for elevation */
+           shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-[#96AFC5]
+           p-10 pt-12 transition-all duration-500 relative z-10;
+  }
+
+  .form-input-field {
+    /* Pill-shaped with soft background as seen in images */
+    @apply w-full px-5 py-3.5 bg-[#f8fafc] border border-slate-200 
+           rounded-2xl outline-none text-[15px] font-sans transition-all duration-200;
+    @apply focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 
+           placeholder:text-slate-400 text-slate-700;
+  }
+
+  .btn-auth-pill {
+    /* Dark Obsidian button matching your reference */
+    @apply w-full bg-[#0f172a] text-white py-4 rounded-2xl text-[16px] font-bold 
+           flex items-center justify-center gap-2 hover:bg-slate-800 
+           active:scale-[0.98] transition-all shadow-xl shadow-slate-900/10;
+  }
+
+  .strength-bar {
+    @apply h-1.5 rounded-full transition-all duration-500 mt-2;
+  }
+
+  .check-item {
+    @apply flex items-center gap-2 text-[12px] mt-1 transition-colors duration-200;
+  }
+
+  .check-invalid { @apply text-slate-400; }
+  .check-valid { @apply text-green-600; }
+
+  val-item {
+    @apply flex items-center gap-2 text-[12px] font-medium transition-colors duration-200;
+  }
+  .val-invalid { @apply text-slate-400; }
+  .val-valid { @apply text-green-600; }
+
+  /* Strength Bar Animation */
+  .strength-meter-bar {
+    @apply h-1.5 rounded-full transition-all duration-500 ease-out;
+  }
+}
