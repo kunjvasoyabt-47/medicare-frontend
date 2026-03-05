@@ -15,6 +15,10 @@ export const loginSchema = Yup.object().shape({
 
 
 export const registerSchema = Yup.object().shape({
+  full_name: Yup.string()
+    .min(3, "Name must be at least 3 characters")
+    .matches(/^[a-zA-Z\s]+$/, "Only alphabets are allowed")
+    .required("Full Name is required"), 
   email: Yup.string()
     .matches(emailLiveRegex, "Email must contain @ and .")
     .email("Invalid email format")

@@ -4,13 +4,18 @@ import { UserPlus, XCircle, Eye, EyeOff } from 'lucide-react';
 import { registerSchema } from '../lib/validation';
 import { InputField } from '../components/InputField';
 import { PasswordStrengthField } from '../components/PasswordStrengthField'; // Assuming you created this component
+import api from '../lib/axios'; // Import your custom instance
+import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 export default function Register({ togglePage }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const { checkAuth } = useAuth();
+  const navigate = useNavigate();
+
   return (
     <div className="auth-page-wrapper">
       <div className="auth-bg-highlight" />
-
       <div className="auth-card-floating">
         <div className="flex flex-col items-center mb-10 text-center">
           <div className="bg-[#0f172a] p-4 rounded-3xl mb-6 text-white shadow-xl shadow-slate-900/20">
@@ -24,13 +29,40 @@ export default function Register({ togglePage }) {
         </div>
 
         <Formik
-          initialValues={{ email: '', gender: '', dob: '', password: '', confirmPassword: '' }}
-          validationSchema={registerSchema}
-          validateOnChange={true} 
-          onSubmit={(values) => console.log(values)}
-        >
+       initialValues={{ full_name: '', email: '', gender: '', dob: '', password: '', confirmPassword: '' }}
+       validationSchema={registerSchema}
+       onSubmit={async (values, { setSubmitting }) => {
+        try {
+          const response = await api.post('/register', {
+            full_name: values.full_name,
+            email: values.email,
+            dob: values.dob,
+            gender: values.gender,
+            password: values.password
+          });
+
+          // 1. Store Refresh Token for the Axios Interceptor
+          localStorage.setItem('refresh_token', response.data.refresh_token);
+          
+          await checkAuth();
+
+          navigate('/welcome-patient'); 
+
+        } catch (err) {
+          alert(err.response?.data?.detail || "Registration failed");
+        } finally {
+          setSubmitting(false);
+        }
+      }}
+    >
           {({ errors, touched, values }) => (
             <Form>
+              <InputField 
+              label="Full Name" 
+              name="full_name" 
+              type="text" 
+              placeholder="Enter your full name" 
+            />
               <InputField label="Email Address" name="email" type="email" placeholder="your@email.com" />
 
               <div className="mb-5">
@@ -50,11 +82,9 @@ export default function Register({ togglePage }) {
 
             <InputField label="Date of Birth" name="dob" type="date" />
 
-            {/* Live Password Strength Meter & Checklist */}
             <PasswordStrengthField label="Password" name="password" placeholder="••••••••" />
 
             <div className="w-full relative">
-            {/* Confirm Password Field */}
             <InputField 
                 label="Confirm Password" 
                 name="confirmPassword" 
@@ -71,7 +101,6 @@ export default function Register({ togglePage }) {
                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
 
-            {/* Live Password Match Check */}
             {values.confirmPassword && values.password !== values.confirmPassword && (
                 <p className="text-red-500 text-[12px] mt-[-10px] mb-4 ml-4 font-semibold flex items-center gap-1.5">
                 <XCircle size={14} /> Passwords do not match

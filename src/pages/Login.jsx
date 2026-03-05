@@ -1,17 +1,46 @@
+import { useState } from 'react'; // Added for error handling
+import { useNavigate } from 'react-router-dom'; // For redirection
 import { Formik, Form } from 'formik';
-import { Lock, LogIn, XCircle, CheckCircle2 } from 'lucide-react';
+import { Lock, LogIn, CheckCircle2, AlertCircle } from 'lucide-react'; // Added AlertCircle
 import { loginSchema } from '../lib/validation';
 import { InputField } from '../components/InputField';
 import { PasswordStrengthField } from '../components/PasswordStrengthField';
+import api from '../lib/axios'; // Your custom axios instance
+import { useAuth } from '../context/AuthContext'; // Your Auth context
 
 export default function Login({ togglePage }) {
+  const navigate = useNavigate();
+  const { checkAuth } = useAuth();
+  const [error, setError] = useState("");
+
+  const handleLogin = async (values, { setSubmitting }) => {
+    setError("");
+    try {
+      const response = await api.post('/login', values);
+
+      // Store Refresh Token for the Axios Interceptor
+      localStorage.setItem('refresh_token', response.data.refresh_token);
+
+      // Update global AuthContext (hits /auth/me)
+      await checkAuth();
+      if (response.data.is_admin) {
+        navigate('/welcome-admin');
+      } else {
+        navigate('/welcome-patient');
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || "Invalid email or password");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="auth-page-wrapper">
       <div className="auth-bg-highlight" />
       
       <div className="auth-card-floating">
         <div className="flex flex-col items-center mb-10 text-center">
-          {/* Main Logo Container */}
           <div className="bg-[#0f172a] p-4 rounded-3xl mb-6 text-white shadow-xl shadow-slate-900/20 transition-transform hover:scale-105 duration-300">
             <Lock size={32} strokeWidth={2.5} />
           </div>
@@ -19,15 +48,21 @@ export default function Login({ togglePage }) {
           <p className="text-slate-500 text-[15px] font-medium">Sign in to continue to your account</p>
         </div>
 
+        {/* Backend Error Message */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 rounded-2xl flex items-center gap-3 text-sm font-semibold animate-shake">
+            <AlertCircle size={18} /> {error}
+          </div>
+        )}
+
         <Formik
           initialValues={{ email: '', password: '' }}
           validationSchema={loginSchema}
-          validateOnChange={true} // Enables live UI updates as you type
-          onSubmit={(values) => console.log("Login Data:", values)}
+          validateOnChange={true}
+          onSubmit={handleLogin} 
         >
-          {({ errors, values }) => (
+          {({ errors, values, isSubmitting }) => (
             <Form>
-              {/* Email Section with Live Feedback */}
               <div className="mb-6">
                 <InputField 
                   label="Email Address" 
@@ -43,7 +78,6 @@ export default function Login({ togglePage }) {
                 )}
               </div>
               
-              {/* Using your custom PasswordStrengthField */}
               <div className="relative">
                 <PasswordStrengthField 
                   label="Password" 
@@ -52,8 +86,12 @@ export default function Login({ togglePage }) {
                 />
               </div>
               
-              <button type="submit" className="btn-auth-pill mt-6 shadow-lg hover:shadow-[#0f172a]/20 active:scale-[0.98] transition-all">
-                <LogIn size={20} /> Sign In
+              <button 
+                type="submit" 
+                disabled={isSubmitting}
+                className="btn-auth-pill mt-6 shadow-lg hover:shadow-[#0f172a]/20 active:scale-[0.98] transition-all disabled:opacity-70"
+              >
+                <LogIn size={20} /> {isSubmitting ? "Signing In..." : "Sign In"}
               </button>
 
               <div className="mt-10 text-center border-t border-slate-50 pt-8">
