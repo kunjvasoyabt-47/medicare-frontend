@@ -9,6 +9,8 @@ import PatientDetails from './pages/PatientDetails';
 function App() {
   return (
     <main className="min-h-screen bg-slate-50">
+      
+    <Route path="/" element={<Navigate to="/login" replace />} />
     <Routes>
       {/* Public Only: Logged-in users are redirected away */}
       <Route path="/login" element={
