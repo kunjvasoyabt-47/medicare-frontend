@@ -6,32 +6,40 @@ const ProtectedRoute = ({ children, adminOnly = false, isPublicOnly = false }) =
   const { user, loading } = useAuth();
   const location = useLocation();
 
+  // 1. Handle Loading State
   if (loading) {
-    return <div className="p-10 text-center font-bold">Verifying Session...</div>;
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+        <span className="ml-3 font-semibold text-slate-600">Verifying Session...</span>
+      </div>
+    );
   }
 
-  // Public Only page 
+  // 2. Public Only Logic (Login/Register)
+  // If user is already logged in, redirect them to their respective dashboard
   if (isPublicOnly && user) {
     return user.is_admin 
       ? <Navigate to="/welcome-admin" replace /> 
       : <Navigate to="/welcome-patient" replace />;
   }
 
-  // user is not logged in
+  // 3. Authentication Check
+  // If trying to access a private page while logged out
   if (!isPublicOnly && !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Patient trying to access Admin page
+  // 4. Authorization Check (Admin Only)
+  // If a non-admin tries to access an admin-only route
   if (adminOnly && !user?.is_admin) {
-    console.warn("Unauthorized access attempt to Admin page");
+    console.warn("Access Denied: Admin privileges required.");
     return <Navigate to="/welcome-patient" replace />;
   }
 
-  //  Admin trying to access Patient page
-  if (!adminOnly && !isPublicOnly && user?.is_admin) {
-     return <Navigate to="/welcome-admin" replace />;
-  }
+  // FIX: We removed the "Admin trying to access Patient page" check.
+  // This allows admins to view pages where adminOnly={false}, 
+  // preventing the infinite redirect loop you were experiencing.
 
   return children;
 };
