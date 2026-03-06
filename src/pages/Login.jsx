@@ -13,6 +13,14 @@ export default function Login({ togglePage }) {
   const { checkAuth } = useAuth();
   const [error, setError] = useState("");
 
+  const handleNavigation = (path) => {
+    // 1. Run your local toggle logic (if needed)
+    if (togglePage) togglePage();
+    
+    // 2. Redirect the user
+    navigate(path);
+  };
+
   const handleLogin = async (values, { setSubmitting }) => {
     setError("");
     try {
@@ -97,9 +105,9 @@ export default function Login({ togglePage }) {
               <div className="mt-10 text-center border-t border-slate-50 pt-8">
                 <p className="text-[14px] text-slate-500 font-medium">
                   Don't have an account?{' '}
-                  <button 
+                 <button 
                     type="button" 
-                    onClick={togglePage} 
+                    onClick={() => handleNavigation('/register')} 
                     className="text-[#0f172a] font-black hover:underline underline-offset-4 decoration-2"
                   >
                     Sign up

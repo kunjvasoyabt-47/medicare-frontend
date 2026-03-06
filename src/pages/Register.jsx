@@ -11,7 +11,15 @@ import { useNavigate } from 'react-router-dom';
 export default function Register({ togglePage }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { checkAuth } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // Define the navigate function
+
+  const handleNavigation = (path) => {
+    // 1. Run your local toggle logic (if needed)
+    if (togglePage) togglePage();
+    
+    // 2. Redirect the user
+    navigate(path);
+  };
 
   return (
     <div className="auth-page-wrapper">
@@ -117,7 +125,11 @@ export default function Register({ togglePage }) {
               <div className="mt-10 text-center border-t border-slate-50 pt-8">
                 <p className="text-[14px] text-slate-500 font-medium">
                   Already registered?{' '}
-                  <button type="button" onClick={togglePage} className="text-[#0f172a] font-black hover:underline">
+                  <button 
+                    type="button" 
+                    onClick={() => handleNavigation('/login')} 
+                    className="text-[#0f172a] font-black hover:underline"
+                  >
                     Sign in
                   </button>
                 </p>

@@ -4,41 +4,50 @@ import Register from './pages/Register';
 import WelcomePatient from './pages/WelcomePatient';
 import WelcomeAdmin from './pages/WelcomeAdmin';
 import ProtectedRoute from './components/ProtectedRoute';
+import PatientDetails from './pages/PatientDetails';
 
 function App() {
   return (
     <main className="min-h-screen bg-slate-50">
-      <Routes>
+    <Routes>
+      {/* Public Only: Logged-in users are redirected away */}
+      <Route path="/login" element={
+          <ProtectedRoute isPublicOnly={true}>
+            <Login />
+          </ProtectedRoute>
+        } 
+      />
+      <Route path="/register" element={
+          <ProtectedRoute isPublicOnly={true}>
+            <Register />
+          </ProtectedRoute>
+        } 
+      />
 
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      {/* Private Patient Route */}
+      <Route path="/welcome-patient" element={
+          <ProtectedRoute adminOnly={false}>
+            <WelcomePatient />
+          </ProtectedRoute>
+        } 
+      />
 
-        {/* Protected Patient Routes */}
-        <Route 
-          path="/welcome-patient" 
-          element={
-            <ProtectedRoute>
-              <WelcomePatient />
-            </ProtectedRoute>
-          } 
-        />
+      {/* Private Admin Route */}
+      <Route path="/welcome-admin" element={
+          <ProtectedRoute adminOnly={true}>
+            <WelcomeAdmin />
+          </ProtectedRoute>
+        } 
+      />
 
-        {/* Protected Admin Routes */}
-        <Route 
-          path="/welcome-admin" 
-          element={
-            <ProtectedRoute adminOnly={true}>
-              <WelcomeAdmin />
-            </ProtectedRoute>
-          } 
-        />
+    <Route path="/admin/patient/:id" element={
+      <ProtectedRoute adminOnly={true}>
+        <PatientDetails />
+      </ProtectedRoute>
+    } 
+  />
 
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        
-        {/* 404 Catch-all */}
-        <Route path="*" element={<div className="p-10 text-center font-bold">404 - Page Not Found</div>} />
-      </Routes>
+    </Routes>
     </main>
   );
 }
