@@ -8,48 +8,45 @@ import PatientDetails from './pages/PatientDetails';
 
 function App() {
   return (
-    <main className="min-h-screen bg-slate-50">
-      
-    <Route path="/" element={<Navigate to="/login" replace />} />
-    <Routes>
-      {/* Public Only: Logged-in users are redirected away */}
-      <Route path="/login" element={
+    <main className="min-h-screen bg-slate-50" style={{ fontFamily: 'Inter, sans-serif' }}>
+      <Routes>
+        {/* All Routes MUST be inside this tag */}
+        <Route path="/" element={<Navigate to="/login" replace />} />
+
+        <Route path="/login" element={
           <ProtectedRoute isPublicOnly={true}>
             <Login />
           </ProtectedRoute>
-        } 
-      />
-      <Route path="/register" element={
+        } />
+
+        <Route path="/register" element={
           <ProtectedRoute isPublicOnly={true}>
             <Register />
           </ProtectedRoute>
-        } 
-      />
+        } />
 
-      {/* Private Patient Route */}
-      <Route path="/welcome-patient" element={
+        <Route path="/welcome-patient" element={
           <ProtectedRoute adminOnly={false}>
             <WelcomePatient />
           </ProtectedRoute>
-        } 
-      />
+        } />
 
-      {/* Private Admin Route */}
-      <Route path="/welcome-admin" element={
+        <Route path="/welcome-admin" element={
           <ProtectedRoute adminOnly={true}>
             <WelcomeAdmin />
           </ProtectedRoute>
-        } 
-      />
+        } />
 
-    <Route path="/admin/patient/:id" element={
-      <ProtectedRoute adminOnly={true}>
-        <PatientDetails />
-      </ProtectedRoute>
-    } 
-  />
+        {/* This was likely the route causing the error before */}
+        <Route path="/admin/patient/:id" element={
+          <ProtectedRoute adminOnly={true}>
+            <PatientDetails />
+          </ProtectedRoute>
+        } />
 
-    </Routes>
+        {/* Safety catch-all */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes> 
     </main>
   );
 }
