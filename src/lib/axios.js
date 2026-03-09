@@ -46,7 +46,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          await axios.post(
+          await api.post(
             '/auth/refresh',
             { refresh_token: refreshToken },
             { withCredentials: true }
