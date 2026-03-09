@@ -47,7 +47,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           await api.post(
-            '/auth/refresh',
+            '/login/refresh',
             { refresh_token: refreshToken },
             { withCredentials: true }
           );
