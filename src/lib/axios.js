@@ -2,7 +2,7 @@ import axios from 'axios';
 
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000', // Use environment variable or fallback to localhost
+  baseURL: import.meta.env.VITE_API_BASE_URL , // Use environment variable or fallback to localhost
   withCredentials: true, // MANDATORY: Allows the browser to send/receive HttpOnly cookies
   headers: {
     'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           await axios.post(
-            'http://localhost:8000/login/refresh', 
+            '/auth/refresh',
             { refresh_token: refreshToken },
             { withCredentials: true }
           );
