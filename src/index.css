@@ -3,14 +3,14 @@
 @theme {
   --color-brand-dark: #0f172a;
   /* Deep organic curve radius for that specific look */
-  --radius-auth-card: 2.5rem; 
+  --radius-auth-card: 2.5rem;
   /* Using standard sans-serif to match the clean look in your images */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
 }
 
 @layer components {
   .auth-page-wrapper {
-    /* min-h-screen for perfect vertical centering */
+    /* Kept for legacy; new pages use h-screen split layout directly */
     @apply min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 relative overflow-hidden;
   }
 
@@ -50,14 +50,22 @@
     @apply flex items-center gap-2 text-[12px] mt-1 transition-colors duration-200;
   }
 
-  .check-invalid { @apply text-slate-400; }
-  .check-valid { @apply text-green-600; }
+  .check-invalid {
+    @apply text-slate-400;
+  }
+  .check-valid {
+    @apply text-green-600;
+  }
 
   val-item {
     @apply flex items-center gap-2 text-[12px] font-medium transition-colors duration-200;
   }
-  .val-invalid { @apply text-slate-400; }
-  .val-valid { @apply text-green-600; }
+  .val-invalid {
+    @apply text-slate-400;
+  }
+  .val-valid {
+    @apply text-green-600;
+  }
 
   /* Strength Bar Animation */
   .strength-meter-bar {
