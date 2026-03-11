@@ -31,8 +31,7 @@ export default function AdminNavbar({ sidebarOpen }) {
     <header
       className={`fixed top-0 right-0 z-30 bg-white border-b border-slate-100 shadow-sm h-16
         flex items-center px-5 gap-3 transition-all duration-300 ease-in-out
-        left-0 ${sidebarOpen ? "lg:left-64" : "lg:left-16"}`}
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
+        left-0 font-sans ${sidebarOpen ? "lg:left-64" : "lg:left-16"}`}
     >
       {/* Brand */}
       <div className="flex items-center gap-2.5">

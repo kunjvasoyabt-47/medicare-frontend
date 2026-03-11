@@ -2,44 +2,108 @@
 
 @theme {
   --color-brand-dark: #0f172a;
-  /* Deep organic curve radius for that specific look */
   --radius-auth-card: 2.5rem;
-  /* Using standard sans-serif to match the clean look in your images */
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-sans: "Sora", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  * {
+    font-family: "Sora", system-ui, -apple-system, sans-serif;
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 }
 
 @layer components {
+  /* Login/Register Panel Backgrounds */
+  .login-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .login-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.06) 0%, transparent 65%);
+  }
+
+  .reg-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .reg-panel::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle at top right, rgba(255,255,255,0.06) 0%, transparent 65%);
+  }
+
+  /* Text Stroke Effect */
+  .panel-heading span,
+  .r-heading span {
+    display: inline-block;
+    background: transparent;
+    -webkit-text-stroke: 1.5px rgba(255,255,255,0.4);
+    color: transparent;
+  }
+
+  /* Spinner Animation */
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* Auth Page Wrapper */
   .auth-page-wrapper {
-    /* Kept for legacy; new pages use h-screen split layout directly */
     @apply min-h-screen bg-[#f8fafc] flex items-center justify-center p-6 relative overflow-hidden;
   }
 
-  /* Highlighted background layer (Lower z-index) */
+  /* Highlighted background layer */
   .auth-bg-highlight {
     @apply absolute -top-24 -right-24 w-96 h-96 bg-slate-200/50 rounded-full blur-3xl z-0;
   }
 
-  /* The Curved Floating Card (High z-index) */
+  /* Curved Floating Card */
   .auth-card-floating {
-    @apply w-full max-w-[440px] bg-white rounded-[10px]  
-           /* Deep shadow for elevation */
-           shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-[#96AFC5]
-           p-10 pt-12 transition-all duration-500 relative z-10;
+    @apply w-full max-w-[440px] bg-white rounded-[10px] shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] border border-[#96AFC5] p-10 pt-12 transition-all duration-500 relative z-10;
   }
 
   .form-input-field {
-    /* Pill-shaped with soft background as seen in images */
-    @apply w-full px-5 py-3.5 bg-[#f8fafc] border border-slate-200 
-           rounded-2xl outline-none text-[15px] font-sans transition-all duration-200;
-    @apply focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 
-           placeholder:text-slate-400 text-slate-700;
+    @apply w-full px-5 py-3.5 bg-[#f8fafc] border border-slate-200 rounded-2xl outline-none text-[15px] font-sans transition-all duration-200;
+    @apply focus:bg-white focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5 placeholder:text-slate-400 text-slate-700;
   }
 
   .btn-auth-pill {
-    /* Dark Obsidian button matching your reference */
-    @apply w-full bg-[#0f172a] text-white py-4 rounded-2xl text-[16px] font-bold 
-           flex items-center justify-center gap-2 hover:bg-slate-800 
-           active:scale-[0.98] transition-all shadow-xl shadow-slate-900/10;
+    @apply w-full bg-[#0f172a] text-white py-4 rounded-2xl text-[16px] font-bold flex items-center justify-center gap-2 hover:bg-slate-800 active:scale-[0.98] transition-all shadow-xl shadow-slate-900/10;
   }
 
   .strength-bar {
@@ -53,22 +117,32 @@
   .check-invalid {
     @apply text-slate-400;
   }
+
   .check-valid {
     @apply text-green-600;
   }
 
-  val-item {
+  .val-item {
     @apply flex items-center gap-2 text-[12px] font-medium transition-colors duration-200;
   }
+
   .val-invalid {
     @apply text-slate-400;
   }
+
   .val-valid {
     @apply text-green-600;
   }
 
-  /* Strength Bar Animation */
   .strength-meter-bar {
     @apply h-1.5 rounded-full transition-all duration-500 ease-out;
+  }
+
+  /* Grid Pattern Background */
+  .grid-pattern {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
 }

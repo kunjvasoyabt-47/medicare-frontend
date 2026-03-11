@@ -15,10 +15,7 @@ export default function AdminLayout({ children }) {
   }, [sidebarOpen]);
 
   return (
-    <div
-      className="min-h-screen bg-[#f1f5f9]"
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
-    >
+    <div className="min-h-screen bg-slate-100 font-sans">
       <AdminNavbar sidebarOpen={sidebarOpen} />
       <AdminSidebar
         isOpen={sidebarOpen}
@@ -27,9 +24,8 @@ export default function AdminLayout({ children }) {
       />
 
       <main
-        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "lg:pl-64" : "lg:pl-16"
-        }`}
+        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:pl-64" : "lg:pl-16"
+          }`}
       >
         <div className="p-4 md:p-6 lg:p-8">{children}</div>
       </main>

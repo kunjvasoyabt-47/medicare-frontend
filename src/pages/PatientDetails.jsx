@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 const MAX_FILES = 5;
+const MAX_SUMMARY_FILES = 1;
 
 // ─── Shared helpers ───────────────────────────────────────────────────────────
 function fileListIcon(status, Icon) {
@@ -115,10 +116,10 @@ function DropZone({
       label: "text-blue-700",
     },
     bills: {
-      ring: "ring-violet-400",
-      bg: "bg-violet-50",
-      icon: "text-violet-600 bg-violet-100",
-      label: "text-violet-700",
+      ring: "ring-slate-400",
+      bg: "bg-slate-50",
+      icon: "text-slate-600 bg-slate-100",
+      label: "text-slate-700",
     },
     prescriptions: {
       ring: "ring-teal-400",
@@ -142,7 +143,7 @@ function DropZone({
           {label}
         </span>
         <span className="ml-auto text-[11px] text-slate-400 font-semibold">
-          {files.length + processedCount}/{MAX_FILES} files
+          {files.length}/{MAX_FILES} files
         </span>
       </div>
 
@@ -154,13 +155,12 @@ function DropZone({
         }}
         onDragLeave={() => setDrag(false)}
         onDrop={handleDrop}
-        className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${
-          disabled
-            ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
-            : drag
-              ? `${c.ring} ring-2 ${c.bg} border-transparent`
-              : "border-slate-200 bg-slate-50 hover:border-slate-300"
-        }`}
+        className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${disabled
+          ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
+          : drag
+            ? `${c.ring} ring-2 ${c.bg} border-transparent`
+            : "border-slate-200 bg-slate-50 hover:border-slate-300"
+          }`}
       >
         <input
           id={inputId}
@@ -172,7 +172,7 @@ function DropZone({
           onChange={(e) => onAdd(Array.from(e.target.files))}
         />
 
-        {files.length === 0 && processedCount === 0 ? (
+        {files.length === 0 ? (
           <label
             htmlFor={inputId}
             className={`flex flex-col items-center justify-center py-6 gap-2 ${disabled ? "cursor-not-allowed" : "cursor-pointer"}`}
@@ -187,18 +187,6 @@ function DropZone({
           </label>
         ) : (
           <div className="p-3 flex flex-col gap-2">
-            {/* Already processed files (greyed out done pills) */}
-            {Array.from({ length: processedCount }).map((_, i) => (
-              <div
-                key={`proc-${i}`}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-emerald-200 bg-emerald-50/60 text-emerald-700 text-[12px] font-semibold"
-              >
-                <CheckCircle size={12} className="text-emerald-500 shrink-0" />
-                <span className="truncate">
-                  File {i + 1} — already processed
-                </span>
-              </div>
-            ))}
             {/* Queued / in-progress files */}
             {files.map((f, i) => (
               <FilePill
@@ -326,15 +314,14 @@ function TimelineRow({
           {Array.from({ length: total }).map((_, i) => (
             <div
               key={i}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
-                i < processed
-                  ? state === "failed" && i === processed - 1
-                    ? "bg-red-400"
-                    : "bg-emerald-400"
-                  : i === processed && state === "active"
-                    ? "bg-amber-300 animate-pulse"
-                    : "bg-slate-200"
-              }`}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${i < processed
+                ? state === "failed" && i === processed - 1
+                  ? "bg-red-400"
+                  : "bg-emerald-400"
+                : i === processed && state === "active"
+                  ? "bg-amber-300 animate-pulse"
+                  : "bg-slate-200"
+                }`}
             />
           ))}
         </div>
@@ -423,6 +410,16 @@ export default function PatientDetails() {
   const pollingRef = useRef(null);
   const toastRef = useRef(null);
 
+  // ── Summary Document State ────────────────────────────────────────────────────
+  const [summaryFile, setSummaryFile] = useState(null);
+  const [summaryStatus, setSummaryStatus] = useState("idle"); // idle | uploading | processing | completed | failed
+  const [summaryProgress, setSummaryProgress] = useState(0);
+  const [summaryError, setSummaryError] = useState(null);
+  const [patientFriendlyUrl, setPatientFriendlyUrl] = useState(null);
+  const [insuranceReadyUrl, setInsuranceReadyUrl] = useState(null);
+  const [isGeneratingPatientDoc, setIsGeneratingPatientDoc] = useState(false);
+  const [isGeneratingInsuranceDoc, setIsGeneratingInsuranceDoc] = useState(false);
+
   const showToast = useCallback((message, type = "success") => {
     clearTimeout(toastRef.current);
     setToast({ message, type });
@@ -440,6 +437,122 @@ export default function PatientDetails() {
     setSubmitError(null);
     setDischargeId(null);
   }, []);
+
+  // ── Summary Document Handlers ──────────────────────────────────────────────────
+  const handleSummaryUpload = async (file) => {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".pdf")) {
+      setSummaryError("Only PDF files are allowed");
+      return;
+    }
+
+    setSummaryFile(file);
+    setSummaryError(null);
+    setSummaryStatus("uploading");
+    setSummaryProgress(0);
+
+    try {
+      // Just store the file locally, don't upload yet
+      setSummaryStatus("completed");
+      setSummaryProgress(100);
+      showToast("Discharge summary ready for processing!");
+    } catch (err) {
+      setSummaryStatus("failed");
+      const errorMsg = typeof err?.response?.data?.detail === 'string'
+        ? err.response.data.detail
+        : typeof err?.response?.data?.message === 'string'
+          ? err.response.data.message
+          : "Upload failed. Please try again.";
+      setSummaryError(errorMsg);
+      showToast("Failed to upload discharge summary", "error");
+      console.error("Upload error:", err?.response?.data);
+    }
+  };
+
+  const handleGeneratePatientFriendly = async () => {
+    if (!summaryFile) {
+      setSummaryError("Please upload a discharge summary first");
+      return;
+    }
+
+    setIsGeneratingPatientDoc(true);
+    setSummaryError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", summaryFile);
+
+      const response = await api.post(`/api/patient-friendly-report/convert-pdf/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setPatientFriendlyUrl(response.data.patient_friendly_url);
+      showToast("Patient-friendly document generated successfully!");
+    } catch (err) {
+      let errorMsg = "Failed to generate patient-friendly document";
+
+      // Handle different error response formats
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        errorMsg = typeof detail === 'string' ? detail : "Invalid file format or server error";
+      } else if (err?.response?.data?.message) {
+        const message = err.response.data.message;
+        errorMsg = typeof message === 'string' ? message : "Failed to generate patient-friendly document";
+      }
+
+      setSummaryError(errorMsg);
+      showToast("Failed to generate patient-friendly document", "error");
+      console.error("Generate error:", err?.response?.data);
+    } finally {
+      setIsGeneratingPatientDoc(false);
+    }
+  };
+
+  const handleGenerateInsuranceReady = async () => {
+    if (!summaryFile) {
+      setSummaryError("Please upload a discharge summary first");
+      return;
+    }
+
+    setIsGeneratingInsuranceDoc(true);
+    setSummaryError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", summaryFile);
+
+      const response = await api.post(`/api/insurance-ready-report/convert-pdf/${id}`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      setInsuranceReadyUrl(response.data.insurance_ready_url);
+      showToast("Insurance-ready document generated successfully!");
+    } catch (err) {
+      let errorMsg = "Failed to generate insurance-ready document";
+
+      // Handle different error response formats
+      if (err?.response?.data?.detail) {
+        const detail = err.response.data.detail;
+        errorMsg = typeof detail === 'string' ? detail : "Invalid file format or server error";
+      } else if (err?.response?.data?.message) {
+        const message = err.response.data.message;
+        errorMsg = typeof message === 'string' ? message : "Failed to generate insurance-ready document";
+      }
+
+      setSummaryError(errorMsg);
+      showToast("Failed to generate insurance-ready document", "error");
+      console.error("Insurance error:", err?.response?.data);
+    } finally {
+      setIsGeneratingInsuranceDoc(false);
+    }
+  };
+
+  const removeSummaryFile = () => {
+    setSummaryFile(null);
+    setSummaryStatus("idle");
+    setSummaryProgress(0);
+    setSummaryError(null);
+  };
 
   useEffect(
     () => () => {
@@ -522,16 +635,12 @@ export default function PatientDetails() {
 
     setFiles((prev) => {
       const current = prev[type];
-      const alreadyProcessed = processedCounts[type];
-      const capacity = MAX_FILES - current.length - alreadyProcessed;
+      const capacity = MAX_FILES - current.length;
       const toAdd = pdfs.slice(0, capacity);
       return { ...prev, [type]: [...current, ...toAdd] };
     });
     setFileStatuses((prev) => {
-      const toAdd = pdfs.slice(
-        0,
-        MAX_FILES - prev[type].length - processedCounts[type],
-      );
+      const toAdd = pdfs.slice(0, MAX_FILES - prev[type].length);
       return { ...prev, [type]: [...prev[type], ...toAdd.map(() => "queued")] };
     });
   };
@@ -617,7 +726,7 @@ export default function PatientDetails() {
         if (dischargeDate) {
           setData((prev) => ({ ...prev, discharge_date: dischargeDate }));
         }
-      } catch {}
+      } catch { }
       // Refresh patient
       const pr = await api.get(`/admin/patients/${id}`);
       setData((prev) => ({ ...prev, ...pr.data }));
@@ -695,8 +804,8 @@ export default function PatientDetails() {
 
     if (
       pendingReports.length +
-        pendingBills.length +
-        pendingPrescriptions.length ===
+      pendingBills.length +
+      pendingPrescriptions.length ===
       0
     ) {
       setSubmitError("Please upload the remaining/failed files for retry.");
@@ -759,7 +868,7 @@ export default function PatientDetails() {
         if (dischargeDate) {
           setData((prev) => ({ ...prev, discharge_date: dischargeDate }));
         }
-      } catch {}
+      } catch { }
       const pr = await api.get(`/admin/patients/${id}`);
       setData((prev) => ({ ...prev, ...pr.data }));
     } catch (err) {
@@ -815,12 +924,9 @@ export default function PatientDetails() {
   // ─────────────────────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center bg-[#f8fafc]"
-        style={{ fontFamily: "'DM Sans', sans-serif" }}
-      >
+      <div className="min-h-screen flex items-center justify-center bg-slate-100 font-sans">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-10 h-10 border-4 border-[#0f172a] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-4 border-slate-900 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-400 font-bold text-sm uppercase tracking-widest">
             Loading Records
           </p>
@@ -830,18 +936,14 @@ export default function PatientDetails() {
   }
 
   return (
-    <div
-      className="min-h-screen bg-[#f1f5f9] p-4 md:p-8"
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
-    >
+    <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
       {/* ── Toast notification ─────────────────────────────────────────────── */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold transition-all duration-500 animate-in slide-in-from-top-3 ${
-            toast.type === "error"
-              ? "bg-red-600 text-white border-red-700 shadow-red-500/30"
-              : "bg-emerald-600 text-white border-emerald-700 shadow-emerald-500/30"
-          }`}
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold transition-all duration-500 animate-in slide-in-from-top-3 ${toast.type === "error"
+            ? "bg-red-600 text-white border-red-700 shadow-red-500/30"
+            : "bg-emerald-600 text-white border-emerald-700 shadow-emerald-500/30"
+            }`}
         >
           {toast.type === "error" ? (
             <AlertCircle size={16} className="shrink-0" />
@@ -865,12 +967,7 @@ export default function PatientDetails() {
           {/* ── Hero Header ──────────────────────────────────────────────────── */}
           <div className="bg-[#0f172a] relative overflow-hidden">
             <div
-              className="absolute inset-0 opacity-5"
-              style={{
-                backgroundImage:
-                  "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
+              className="absolute inset-0 opacity-5 grid-pattern"
             />
             <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center md:items-start gap-6">
               <div className="w-24 h-24 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-black text-white border border-white/20 shadow-2xl backdrop-blur-md shrink-0">
@@ -964,7 +1061,7 @@ export default function PatientDetails() {
           </div>
 
           {/* ── Discharge Management Panel ────────────────────────────────────── */}
-          {isEditing && !data?.discharge_date && (
+          {isEditing && (
             <div className="px-6 md:px-10 pb-2">
               <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
                 {/* Panel header */}
@@ -1156,7 +1253,7 @@ export default function PatientDetails() {
                             label: "Bills",
                             val: processedCounts.bills,
                             total: timelineTotal.bills,
-                            color: "violet",
+                            color: "slate",
                           },
                           {
                             label: "Rx",
@@ -1249,72 +1346,373 @@ export default function PatientDetails() {
             </div>
           )}
 
+          {/* ── Patient-Friendly Document Generation Panel ────────────────────── */}
+          {isEditing && (
+            <div className="px-6 md:px-10 pb-8">
+              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
+                {/* Panel header */}
+                <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900 flex items-center gap-3">
+                  <div className="p-2 bg-white/10 rounded-xl">
+                    <FileText size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black text-[15px]">
+                      Generate Patient Documents
+                    </h3>
+                    <p className="text-white/60 text-[11px] mt-0.5">
+                      Upload discharge summary and generate patient-friendly & insurance-ready documents
+                    </p>
+                  </div>
+                  {summaryStatus === "completed" && (
+                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl">
+                      <CheckCircle size={13} className="text-emerald-400" />
+                      <span className="text-emerald-300 text-[12px] font-black">
+                        Summary Uploaded
+                      </span>
+                    </div>
+                  )}
+                  {summaryStatus === "uploading" && (
+                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-xl">
+                      <Loader2 size={13} className="text-amber-400 animate-spin" />
+                      <span className="text-amber-300 text-[12px] font-black">
+                        Uploading…
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-slate-50 p-6">
+                  <div className="grid lg:grid-cols-5 gap-6">
+                    {/* ── Left col: Upload Zone (3/5 width) ─────────────────── */}
+                    <div className="lg:col-span-3 flex flex-col gap-5">
+                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
+                        Upload Discharge Summary
+                      </p>
+
+                      {/* Upload Zone */}
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-lg text-indigo-600 bg-indigo-100">
+                            <FileText size={14} />
+                          </div>
+                          <span className="text-[13px] font-black uppercase tracking-wider text-indigo-700">
+                            Discharge Summary
+                          </span>
+                          <span className="ml-auto text-[11px] text-slate-400 font-semibold">
+                            {summaryFile ? "1/1 file" : "0/1 file"}
+                          </span>
+                        </div>
+
+                        {/* Drop target */}
+                        <div
+                          onDragOver={(e) => {
+                            e.preventDefault();
+                            if (summaryStatus === "uploading" || summaryStatus === "processing") return;
+                            e.currentTarget.classList.add("border-slate-400", "bg-slate-100");
+                          }}
+                          onDragLeave={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove("border-slate-400", "bg-slate-100");
+                          }}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            e.currentTarget.classList.remove("border-slate-400", "bg-slate-100");
+                            if (summaryStatus === "uploading" || summaryStatus === "processing") return;
+                            const file = e.dataTransfer.files[0];
+                            if (file && file.name.toLowerCase().endsWith(".pdf")) {
+                              handleSummaryUpload(file);
+                            } else {
+                              setSummaryError("Only PDF files are allowed");
+                            }
+                          }}
+                          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${summaryStatus === "uploading" || summaryStatus === "processing"
+                            ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
+                            : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                            }`}
+                        >
+                          <input
+                            id="summary-upload"
+                            type="file"
+                            accept=".pdf"
+                            disabled={summaryStatus === "uploading" || summaryStatus === "processing"}
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) handleSummaryUpload(file);
+                            }}
+                          />
+
+                          {!summaryFile ? (
+                            <label
+                              htmlFor="summary-upload"
+                              className="flex flex-col items-center justify-center py-6 gap-2 cursor-pointer"
+                            >
+                              <Upload size={22} className="text-slate-300" />
+                              <p className="text-slate-400 text-[13px] font-semibold">
+                                Drop PDF or click to browse
+                              </p>
+                              <p className="text-slate-300 text-[11px]">
+                                Single discharge summary file
+                              </p>
+                            </label>
+                          ) : (
+                            <div className="p-3">
+                              <div
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[12px] font-semibold ${summaryStatus === "completed"
+                                  ? "border-emerald-200 bg-emerald-50/60 text-emerald-800"
+                                  : summaryStatus === "failed"
+                                    ? "border-red-200 bg-red-50/60 text-red-700"
+                                    : summaryStatus === "uploading"
+                                      ? "border-amber-200 bg-amber-50/60 text-amber-800"
+                                      : "border-slate-200 bg-white text-slate-700"
+                                  }`}
+                              >
+                                <FileText size={12} className="shrink-0 opacity-60" />
+                                <span className="truncate flex-1">{summaryFile.name}</span>
+                                {summaryStatus === "completed" && (
+                                  <CheckCircle size={12} className="text-emerald-500 shrink-0" />
+                                )}
+                                {summaryStatus === "failed" && (
+                                  <AlertCircle size={12} className="text-red-500 shrink-0" />
+                                )}
+                                {summaryStatus === "uploading" && (
+                                  <Loader2 size={12} className="animate-spin text-amber-500 shrink-0" />
+                                )}
+                                {summaryStatus !== "uploading" && summaryStatus !== "processing" && (
+                                  <button
+                                    onClick={removeSummaryFile}
+                                    className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
+                                  >
+                                    <X size={12} />
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Progress bar */}
+                        {summaryStatus === "uploading" && (
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between text-[11px] font-semibold">
+                              <span className="text-slate-500">Uploading...</span>
+                              <span className="text-amber-600">{summaryProgress}%</span>
+                            </div>
+                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                                style={{ width: `${summaryProgress}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Error banner */}
+                        {summaryError && (
+                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
+                            <p className="text-red-700 text-[13px] font-semibold">
+                              {summaryError}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Generated Documents Display */}
+                      {(patientFriendlyUrl || insuranceReadyUrl) && (
+                        <div className="flex flex-col gap-3 mt-4">
+                          <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
+                            Generated Documents
+                          </p>
+
+                          {patientFriendlyUrl && (
+                            <a
+                              href={patientFriendlyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-4 bg-white border border-emerald-200 rounded-2xl hover:border-emerald-400 transition-all group"
+                            >
+                              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 transition-all">
+                                <FileText size={18} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-slate-800 font-bold text-[14px]">
+                                  Patient-Friendly Document
+                                </p>
+                                <p className="text-slate-500 text-[12px] truncate">
+                                  Click to view or download
+                                </p>
+                              </div>
+                              <CheckCircle size={18} className="text-emerald-500 shrink-0" />
+                            </a>
+                          )}
+
+                          {insuranceReadyUrl && (
+                            <a
+                              href={insuranceReadyUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-3 p-4 bg-white border border-blue-200 rounded-2xl hover:border-blue-400 transition-all group"
+                            >
+                              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-all">
+                                <Receipt size={18} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-slate-800 font-bold text-[14px]">
+                                  Insurance-Ready Document
+                                </p>
+                                <p className="text-slate-500 text-[12px] truncate">
+                                  Click to view or download
+                                </p>
+                              </div>
+                              <CheckCircle size={18} className="text-blue-500 shrink-0" />
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── Right col: Actions (2/5 width) ─────────────────────── */}
+                    <div className="lg:col-span-2 flex flex-col gap-5">
+                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
+                        Generate Documents
+                      </p>
+
+                      {/* Status card */}
+                      <div className="rounded-2xl bg-white border border-slate-200 p-4">
+                        <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3">
+                          Document Status
+                        </p>
+                        <div className="flex flex-col gap-3">
+                          {/* Summary status */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full shrink-0 ${summaryStatus === "completed"
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : summaryStatus === "failed"
+                                  ? "bg-red-500 shadow-red-300 shadow-sm"
+                                  : summaryStatus === "uploading"
+                                    ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                    : "bg-slate-300"
+                                }`}
+                            />
+                            <span className="text-[13px] text-slate-600 font-semibold">
+                              Discharge Summary
+                            </span>
+                            {summaryStatus === "completed" && (
+                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
+                            )}
+                          </div>
+
+                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
+
+                          {/* Patient-friendly status */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full shrink-0 ${patientFriendlyUrl
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : isGeneratingPatientDoc
+                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                  : "bg-slate-300"
+                                }`}
+                            />
+                            <span className="text-[13px] text-slate-600 font-semibold">
+                              Patient-Friendly
+                            </span>
+                            {patientFriendlyUrl && (
+                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
+                            )}
+                          </div>
+
+                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
+
+                          {/* Insurance-ready status */}
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`w-3 h-3 rounded-full shrink-0 ${insuranceReadyUrl
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : isGeneratingInsuranceDoc
+                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                  : "bg-slate-300"
+                                }`}
+                            />
+                            <span className="text-[13px] text-slate-600 font-semibold">
+                              Insurance-Ready
+                            </span>
+                            {insuranceReadyUrl && (
+                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col gap-3 mt-auto">
+                        {/* Generate Patient-Friendly */}
+                        <button
+                          onClick={handleGeneratePatientFriendly}
+                          disabled={summaryStatus !== "completed" || isGeneratingPatientDoc || isGeneratingInsuranceDoc}
+                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {isGeneratingPatientDoc ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <FileText size={15} />
+                              {patientFriendlyUrl ? "Regenerate" : "Generate"} Patient-Friendly
+                            </>
+                          )}
+                        </button>
+
+                        {/* Generate Insurance-Ready */}
+                        <button
+                          onClick={handleGenerateInsuranceReady}
+                          disabled={summaryStatus !== "completed" || isGeneratingPatientDoc || isGeneratingInsuranceDoc}
+                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          {isGeneratingInsuranceDoc ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" />
+                              Generating...
+                            </>
+                          ) : (
+                            <>
+                              <Receipt size={15} />
+                              Generate Insurance-Ready Doc
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ── Footer Actions ─────────────────────────────────────────────────── */}
           <div className="p-8 md:p-10 pt-6 flex flex-col md:flex-row gap-3">
             {/* Toggle panel */}
-            {!data?.discharge_date && (
-              <button
-                onClick={() => setIsEditing(!isEditing)}
-                className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${
-                  isEditing
-                    ? "bg-white text-slate-700 border border-slate-300 hover:border-slate-500"
-                    : "bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10"
+            <button
+              onClick={() => setIsEditing(!isEditing)}
+              className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${isEditing
+                ? "bg-white text-slate-700 border border-slate-300 hover:border-slate-500"
+                : "bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10"
                 }`}
-              >
-                {isEditing ? (
-                  <>
-                    <ChevronUp size={16} /> Close Panel
-                  </>
-                ) : (
-                  <>
-                    <FileText size={16} /> Manage Discharge Documents
-                  </>
-                )}
-              </button>
-            )}
-
-            {/* Discharge button — enabled only when all docs processed */}
-            {!data?.discharge_date && (
-              <button
-                onClick={async () => {
-                  if (!isCompleted) return;
-                  // Get discharge_date from the status endpoint
-                  let dischargeDate = null;
-                  if (dischargeId) {
-                    try {
-                      const sr = await api.get(
-                        `/api/discharge/${dischargeId}/status`,
-                      );
-                      dischargeDate = sr.data?.discharge_date;
-                    } catch {}
-                  }
-                  // Set discharge date on local data (persisted via backend)
-                  const today = new Date().toISOString().split("T")[0];
-                  setData((prev) => ({
-                    ...prev,
-                    discharge_date: dischargeDate || today,
-                  }));
-                  // Reset ALL upload state
-                  resetUploadState();
-                  setIsEditing(false);
-                  showToast("Patient discharged successfully!");
-                }}
-                disabled={!isCompleted}
-                className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${
-                  isCompleted
-                    ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 cursor-pointer"
-                    : "bg-slate-100 text-slate-400 cursor-not-allowed"
-                }`}
-                title={
-                  !isCompleted
-                    ? "Process all documents before discharge"
-                    : "Mark patient as discharged"
-                }
-              >
-                <LogOut size={16} />
-                {isCompleted ? "Patient Discharged ✓" : "Discharge Patient"}
-              </button>
-            )}
+            >
+              {isEditing ? (
+                <>
+                  <ChevronUp size={16} /> Close Panel
+                </>
+              ) : (
+                <>
+                  <FileText size={16} /> Manage Discharge Documents
+                </>
+              )}
+            </button>
 
             {data?.discharge_date && (
               <div className="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-400 font-bold text-[15px] text-center flex items-center justify-center gap-2">

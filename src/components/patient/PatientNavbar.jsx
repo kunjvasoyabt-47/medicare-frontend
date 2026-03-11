@@ -38,8 +38,7 @@ export default function PatientNavbar({ sidebarOpen }) {
     <header
       className={`fixed top-0 right-0 z-30 bg-white border-b border-slate-100 shadow-sm h-16
         flex items-center px-5 gap-3 transition-all duration-300 ease-in-out
-        left-0 ${sidebarOpen ? "lg:left-64" : "lg:left-16"}`}
-      style={{ fontFamily: "'DM Sans', sans-serif" }}
+        left-0 font-sans ${sidebarOpen ? "lg:left-64" : "lg:left-16"}`}
     >
       {/* Brand */}
       <div className="flex items-center gap-2.5">
@@ -62,7 +61,7 @@ export default function PatientNavbar({ sidebarOpen }) {
           aria-expanded={dropdownOpen}
         >
           <div className="w-7 h-7 rounded-xl bg-[#111111] text-white flex items-center justify-center font-black text-[12px] uppercase shrink-0">
-            {user?.full_name?.charAt(0) || "P"}
+            {user?.email?.charAt(0) || "P"}
           </div>
           <div className="hidden sm:block text-left min-w-0">
             <p className="text-[11px] font-black text-slate-800 leading-tight truncate max-w-[120px]">
