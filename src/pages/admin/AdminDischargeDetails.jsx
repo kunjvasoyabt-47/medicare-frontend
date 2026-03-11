@@ -99,11 +99,10 @@ function MedCard({ med }) {
           </div>
         </div>
         <span
-          className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${
-            med.is_active
+          className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${med.is_active
               ? "bg-emerald-50 text-emerald-600"
               : "bg-slate-100 text-slate-500"
-          }`}
+            }`}
         >
           {med.is_active ? "Active" : "Inactive"}
         </span>
@@ -171,14 +170,7 @@ export default function AdminDischargeDetails() {
 
         {/* Header card */}
         <div className="bg-[#0f172a] rounded-3xl p-6 md:p-8 mb-6 relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage:
-                "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
+          <div className="absolute inset-0 opacity-5 grid-pattern" />
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl font-black text-white border border-white/20 backdrop-blur-md shrink-0">
               {data.patient_name?.charAt(0)}

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../lib/axios';
-import { 
-  LogOut, ShieldCheck, Search, ArrowUpDown, 
-  ChevronLeft, ChevronRight, Eye 
+import {
+  LogOut, ShieldCheck, Search, ArrowUpDown,
+  ChevronLeft, ChevronRight, Eye
 } from 'lucide-react';
 
 export default function WelcomeAdmin() {
@@ -37,11 +37,11 @@ export default function WelcomeAdmin() {
         const response = await api.get('/admin/patients', {
           params: { search: searchTerm, page: currentPage, size: itemsPerPage, sort: sortOrder }
         });
-        setPatients(response.data.items || []); 
+        setPatients(response.data.items || []);
         setTotalItems(response.data.total || 0);
       } catch (err) {
         console.error("Error fetching patients:", err);
-        setPatients([]); 
+        setPatients([]);
       } finally {
         setLoading(false);
       }
@@ -52,7 +52,7 @@ export default function WelcomeAdmin() {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8" style={{ fontFamily: 'Inter, sans-serif' }}>
+    <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
       <nav className="max-w-6xl mx-auto flex justify-between items-center bg-white p-5 rounded-3xl shadow-sm border border-slate-100 mb-8 relative z-10">
         <div className="flex items-center gap-3">
           <div className="bg-[#0f172a] p-2.5 rounded-2xl text-white shadow-lg"><ShieldCheck size={24} /></div>
@@ -70,12 +70,12 @@ export default function WelcomeAdmin() {
         <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Search patients..." 
-              className="form-input-field pl-12 text-[15px]" 
-              value={searchTerm} 
-              onChange={(e) => updateFilters({ search: e.target.value, page: 1 })} 
+            <input
+              type="text"
+              placeholder="Search patients..."
+              className="form-input-field pl-12 text-[15px]"
+              value={searchTerm}
+              onChange={(e) => updateFilters({ search: e.target.value, page: 1 })}
             />
           </div>
           <button onClick={() => updateFilters({ sort: sortOrder === 'asc' ? 'desc' : 'asc' })} className="flex items-center gap-2 px-5 py-3.5 bg-slate-50 text-slate-900 rounded-2xl font-bold border border-slate-200 hover:border-slate-900 transition-all text-[15px]">
@@ -97,19 +97,18 @@ export default function WelcomeAdmin() {
               {loading ? (
                 <tr><td colSpan="4" className="py-10 text-center text-slate-400 font-bold italic text-[15px]">Refreshing data...</td></tr>
               ) : patients.map((patient) => (
-                <tr 
-                  key={patient.id} 
+                <tr
+                  key={patient.id}
                   className="group hover:bg-slate-50/50 transition-colors cursor-pointer"
                   onClick={() => navigate(`/admin/patient/${patient.id}`)}
                 >
                   <td className="py-5 pl-4 flex items-center gap-3">
-                  <div 
-                      className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white font-black uppercase text-[15px] shadow-md shadow-slate-900/10"
-                      style={{ fontFamily: 'Inter, sans-serif' }}
+                    <div
+                      className="w-10 h-10 bg-slate-700 rounded-xl flex items-center justify-center text-white font-black uppercase text-base shadow-md shadow-slate-900/10"
                     >
                       {patient.full_name?.charAt(0) || 'P'}
-                    </div> 
-                  <div><p className="font-bold text-slate-900 text-[15px]">{patient.full_name}</p><p className="text-[13px] text-slate-400">{patient.email}</p></div>
+                    </div>
+                    <div><p className="font-bold text-slate-900 text-[15px]">{patient.full_name}</p><p className="text-[13px] text-slate-400">{patient.email}</p></div>
                   </td>
                   <td className="py-5"><span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg font-bold text-xs">#{patient.id}</span></td>
                   <td className="py-5 text-right pr-12">

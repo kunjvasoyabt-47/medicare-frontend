@@ -32,11 +32,10 @@ function Field({
   options,
   error,
 }) {
-  const inputCls = `w-full bg-white border rounded-xl px-3 py-2 text-slate-800 font-bold text-[14px] focus:outline-none focus:ring-2 transition-all ${
-    error
+  const inputCls = `w-full bg-white border rounded-xl px-3 py-2 text-slate-800 font-bold text-[14px] focus:outline-none focus:ring-2 transition-all ${error
       ? "border-red-400 focus:ring-red-200 focus:border-red-400"
       : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
-  }`;
+    }`;
 
   return (
     <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 group hover:border-slate-200 transition-all">
@@ -198,11 +197,10 @@ export default function PatientProfile() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold animate-in slide-in-from-top-3 duration-300 ${
-            toast.type === "error"
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold animate-in slide-in-from-top-3 duration-300 ${toast.type === "error"
               ? "bg-red-600 text-white border-red-700"
               : "bg-emerald-600 text-white border-emerald-700"
-          }`}
+            }`}
         >
           {toast.type === "error" ? (
             <AlertCircle size={16} />
@@ -225,14 +223,7 @@ export default function PatientProfile() {
         <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
           {/* Hero header */}
           <div className="bg-[#0f172a] relative overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-5"
-              style={{
-                backgroundImage:
-                  "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-                backgroundSize: "32px 32px",
-              }}
-            />
+            <div className="absolute inset-0 opacity-5 grid-pattern" />
             <div className="relative p-8 flex flex-col sm:flex-row items-center sm:items-start gap-5">
               <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-black text-white border border-white/20 shadow-2xl backdrop-blur-md shrink-0">
                 {profile?.full_name?.charAt(0).toUpperCase()}

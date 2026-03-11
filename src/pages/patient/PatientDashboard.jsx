@@ -64,17 +64,10 @@ export default function PatientDashboard() {
       <div className="max-w-4xl mx-auto">
         {/* Welcome banner */}
         <div className="bg-[#0f172a] rounded-3xl p-6 md:p-8 mb-8 relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage:
-                "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
+          <div className="absolute inset-0 opacity-5 grid-pattern" />
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl font-black text-white border border-white/20 backdrop-blur-md shrink-0">
-              {patient?.full_name?.charAt(0) || "P"}
+              {patient?.email?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-slate-400 text-[13px] font-medium mb-1">

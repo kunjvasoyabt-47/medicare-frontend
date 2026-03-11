@@ -45,8 +45,7 @@ export default function AdminSidebar({ isOpen, onClose, onMenuToggle }) {
       )}
 
       <aside
-        style={{ fontFamily: "'DM Sans', sans-serif" }}
-        className={`fixed top-0 left-0 h-full bg-[#111111] z-50 flex flex-col
+        className={`fixed top-0 left-0 h-full bg-[#111111] z-50 flex flex-col font-sans
           transition-all duration-300 ease-in-out overflow-hidden
           ${isOpen ? "w-64 translate-x-0" : "lg:w-16 lg:translate-x-0 w-64 -translate-x-full"}`}
       >
@@ -85,10 +84,9 @@ export default function AdminSidebar({ isOpen, onClose, onMenuToggle }) {
                 title={!isOpen ? label : undefined}
                 className={`w-full flex items-center py-3 rounded-xl transition-all duration-200
                   ${isOpen ? "gap-3 px-4" : "justify-center px-0"}
-                  ${
-                    active
-                      ? "bg-white text-[#111111] shadow-lg shadow-black/20"
-                      : "text-white/80 hover:bg-white/10 hover:text-white"
+                  ${active
+                    ? "bg-white text-[#111111] shadow-lg shadow-black/20"
+                    : "text-white/80 hover:bg-white/10 hover:text-white"
                   }`}
               >
                 <Icon size={18} className="shrink-0" />

@@ -96,11 +96,10 @@ function MedCard({ med }) {
           </div>
         </div>
         <span
-          className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${
-            med.is_active
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-slate-100 text-slate-500"
-          }`}
+          className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${med.is_active
+            ? "bg-emerald-50 text-emerald-600"
+            : "bg-slate-100 text-slate-500"
+            }`}
         >
           {med.is_active ? "Active" : "Inactive"}
         </span>
@@ -109,7 +108,7 @@ function MedCard({ med }) {
   );
 }
 
-export default function PatientDischargeDetails() {
+function PatientDischargeDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
@@ -168,14 +167,7 @@ export default function PatientDischargeDetails() {
 
         {/* Header */}
         <div className="bg-[#0f172a] rounded-3xl p-6 mb-6 relative overflow-hidden">
-          <div
-            className="absolute inset-0 opacity-5"
-            style={{
-              backgroundImage:
-                "linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)",
-              backgroundSize: "32px 32px",
-            }}
-          />
+          <div className="absolute inset-0 opacity-5 grid-pattern" />
           <div className="relative">
             <div className="flex flex-wrap items-center gap-3 mb-3">
               <h1 className="text-white font-black text-[20px]">
@@ -266,10 +258,58 @@ export default function PatientDischargeDetails() {
                   <PdfCard
                     key={b.id}
                     title={`Invoice #${b.invoice_number}`}
-                    subtitle={`Total: $${b.total_amount?.toFixed(2)} · ${b.invoice_date || ""}`}
+                    subtitle={`Total: ${b.total_amount?.toFixed(2)} · ${b.invoice_date || ""}`}
                     url={b.bill_url}
                   />
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Discharge Summary */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader
+              icon={FileText}
+              title="Discharge Summary"
+              count={data.discharge_summary_url ? 1 : 0}
+              colorClass="text-emerald-600"
+              bgClass="bg-emerald-50"
+            />
+            {!data.discharge_summary_url ? (
+              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+                No discharge summary available
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <PdfCard
+                  title="Discharge Summary"
+                  subtitle="Complete discharge documentation"
+                  url={data.discharge_summary_url}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Patient-Friendly Report */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader
+              icon={FileText}
+              title="Patient-Friendly Report"
+              count={data.patient_friendly_url ? 1 : 0}
+              colorClass="text-amber-600"
+              bgClass="bg-amber-50"
+            />
+            {!data.patient_friendly_url ? (
+              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+                No patient-friendly report available
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <PdfCard
+                  title="Patient-Friendly Report"
+                  subtitle="Easy-to-understand discharge information"
+                  url={data.patient_friendly_url}
+                />
               </div>
             )}
           </div>
@@ -300,3 +340,5 @@ export default function PatientDischargeDetails() {
     </PatientLayout>
   );
 }
+
+export default PatientDischargeDetails;
