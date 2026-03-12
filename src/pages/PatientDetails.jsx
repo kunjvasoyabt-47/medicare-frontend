@@ -410,13 +410,7 @@ export default function PatientDetails() {
   const pollingRef = useRef(null);
   const toastRef = useRef(null);
 
-  // ── Summary Document State ────────────────────────────────────────────────────
-  const [summaryFile, setSummaryFile] = useState(null);
-  const [summaryStatus, setSummaryStatus] = useState("idle"); // idle | uploading | processing | completed | failed
-  const [summaryProgress, setSummaryProgress] = useState(0);
-  const [summaryError, setSummaryError] = useState(null);
-  const [patientFriendlyUrl, setPatientFriendlyUrl] = useState(null);
-  const [insuranceReadyUrl, setInsuranceReadyUrl] = useState(null);
+  // ── Document Generation State ────────────────────────────────────────────────────
   const [isGeneratingPatientDoc, setIsGeneratingPatientDoc] = useState(false);
   const [isGeneratingInsuranceDoc, setIsGeneratingInsuranceDoc] = useState(false);
 
@@ -438,56 +432,19 @@ export default function PatientDetails() {
     setDischargeId(null);
   }, []);
 
-  // ── Summary Document Handlers ──────────────────────────────────────────────────
-  const handleSummaryUpload = async (file) => {
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".pdf")) {
-      setSummaryError("Only PDF files are allowed");
-      return;
-    }
-
-    setSummaryFile(file);
-    setSummaryError(null);
-    setSummaryStatus("uploading");
-    setSummaryProgress(0);
-
-    try {
-      // Just store the file locally, don't upload yet
-      setSummaryStatus("completed");
-      setSummaryProgress(100);
-      showToast("Discharge summary ready for processing!");
-    } catch (err) {
-      setSummaryStatus("failed");
-      const errorMsg = typeof err?.response?.data?.detail === 'string'
-        ? err.response.data.detail
-        : typeof err?.response?.data?.message === 'string'
-          ? err.response.data.message
-          : "Upload failed. Please try again.";
-      setSummaryError(errorMsg);
-      showToast("Failed to upload discharge summary", "error");
-      console.error("Upload error:", err?.response?.data);
-    }
-  };
-
+  // ── Document Generation Handlers ──────────────────────────────────────────────────
   const handleGeneratePatientFriendly = async () => {
-    if (!summaryFile) {
-      setSummaryError("Please upload a discharge summary first");
-      return;
-    }
-
     setIsGeneratingPatientDoc(true);
-    setSummaryError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", summaryFile);
+      // Call the backend endpoint to generate patient-friendly document
+      const response = await api.post(`/api/patients/${id}/generate-pfd`);
 
-      const response = await api.post(`/api/patient-friendly-report/convert-pdf/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setPatientFriendlyUrl(response.data.patient_friendly_url);
       showToast("Patient-friendly document generated successfully!");
+
+      // Refresh patient data to get the updated PFD URL
+      const updatedPatient = await api.get(`/admin/patients/${id}`);
+      setData(updatedPatient.data);
     } catch (err) {
       let errorMsg = "Failed to generate patient-friendly document";
 
@@ -500,8 +457,7 @@ export default function PatientDetails() {
         errorMsg = typeof message === 'string' ? message : "Failed to generate patient-friendly document";
       }
 
-      setSummaryError(errorMsg);
-      showToast("Failed to generate patient-friendly document", "error");
+      showToast(errorMsg, "error");
       console.error("Generate error:", err?.response?.data);
     } finally {
       setIsGeneratingPatientDoc(false);
@@ -509,24 +465,17 @@ export default function PatientDetails() {
   };
 
   const handleGenerateInsuranceReady = async () => {
-    if (!summaryFile) {
-      setSummaryError("Please upload a discharge summary first");
-      return;
-    }
-
     setIsGeneratingInsuranceDoc(true);
-    setSummaryError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", summaryFile);
+      // Call the backend endpoint to generate IRD
+      const response = await api.post(`/api/patients/${id}/generate-ird`);
 
-      const response = await api.post(`/api/insurance-ready-report/convert-pdf/${id}`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setInsuranceReadyUrl(response.data.insurance_ready_url);
       showToast("Insurance-ready document generated successfully!");
+
+      // Refresh patient data to get the updated IRD URL
+      const updatedPatient = await api.get(`/admin/patients/${id}`);
+      setData(updatedPatient.data);
     } catch (err) {
       let errorMsg = "Failed to generate insurance-ready document";
 
@@ -539,19 +488,11 @@ export default function PatientDetails() {
         errorMsg = typeof message === 'string' ? message : "Failed to generate insurance-ready document";
       }
 
-      setSummaryError(errorMsg);
-      showToast("Failed to generate insurance-ready document", "error");
+      showToast(errorMsg, "error");
       console.error("Insurance error:", err?.response?.data);
     } finally {
       setIsGeneratingInsuranceDoc(false);
     }
-  };
-
-  const removeSummaryFile = () => {
-    setSummaryFile(null);
-    setSummaryStatus("idle");
-    setSummaryProgress(0);
-    setSummaryError(null);
   };
 
   useEffect(
@@ -1338,353 +1279,6 @@ export default function PatientDetails() {
                             )}
                           </>
                         )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Patient-Friendly Document Generation Panel ────────────────────── */}
-          {isEditing && (
-            <div className="px-6 md:px-10 pb-8">
-              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                {/* Panel header */}
-                <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900 flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-xl">
-                    <FileText size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-black text-[15px]">
-                      Generate Patient Documents
-                    </h3>
-                    <p className="text-white/60 text-[11px] mt-0.5">
-                      Upload discharge summary and generate patient-friendly & insurance-ready documents
-                    </p>
-                  </div>
-                  {summaryStatus === "completed" && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl">
-                      <CheckCircle size={13} className="text-emerald-400" />
-                      <span className="text-emerald-300 text-[12px] font-black">
-                        Summary Uploaded
-                      </span>
-                    </div>
-                  )}
-                  {summaryStatus === "uploading" && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-xl">
-                      <Loader2 size={13} className="text-amber-400 animate-spin" />
-                      <span className="text-amber-300 text-[12px] font-black">
-                        Uploading…
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="bg-slate-50 p-6">
-                  <div className="grid lg:grid-cols-5 gap-6">
-                    {/* ── Left col: Upload Zone (3/5 width) ─────────────────── */}
-                    <div className="lg:col-span-3 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        Upload Discharge Summary
-                      </p>
-
-                      {/* Upload Zone */}
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg text-indigo-600 bg-indigo-100">
-                            <FileText size={14} />
-                          </div>
-                          <span className="text-[13px] font-black uppercase tracking-wider text-indigo-700">
-                            Discharge Summary
-                          </span>
-                          <span className="ml-auto text-[11px] text-slate-400 font-semibold">
-                            {summaryFile ? "1/1 file" : "0/1 file"}
-                          </span>
-                        </div>
-
-                        {/* Drop target */}
-                        <div
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            if (summaryStatus === "uploading" || summaryStatus === "processing") return;
-                            e.currentTarget.classList.add("border-slate-400", "bg-slate-100");
-                          }}
-                          onDragLeave={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove("border-slate-400", "bg-slate-100");
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove("border-slate-400", "bg-slate-100");
-                            if (summaryStatus === "uploading" || summaryStatus === "processing") return;
-                            const file = e.dataTransfer.files[0];
-                            if (file && file.name.toLowerCase().endsWith(".pdf")) {
-                              handleSummaryUpload(file);
-                            } else {
-                              setSummaryError("Only PDF files are allowed");
-                            }
-                          }}
-                          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${summaryStatus === "uploading" || summaryStatus === "processing"
-                            ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
-                            : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                            }`}
-                        >
-                          <input
-                            id="summary-upload"
-                            type="file"
-                            accept=".pdf"
-                            disabled={summaryStatus === "uploading" || summaryStatus === "processing"}
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) handleSummaryUpload(file);
-                            }}
-                          />
-
-                          {!summaryFile ? (
-                            <label
-                              htmlFor="summary-upload"
-                              className="flex flex-col items-center justify-center py-6 gap-2 cursor-pointer"
-                            >
-                              <Upload size={22} className="text-slate-300" />
-                              <p className="text-slate-400 text-[13px] font-semibold">
-                                Drop PDF or click to browse
-                              </p>
-                              <p className="text-slate-300 text-[11px]">
-                                Single discharge summary file
-                              </p>
-                            </label>
-                          ) : (
-                            <div className="p-3">
-                              <div
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[12px] font-semibold ${summaryStatus === "completed"
-                                  ? "border-emerald-200 bg-emerald-50/60 text-emerald-800"
-                                  : summaryStatus === "failed"
-                                    ? "border-red-200 bg-red-50/60 text-red-700"
-                                    : summaryStatus === "uploading"
-                                      ? "border-amber-200 bg-amber-50/60 text-amber-800"
-                                      : "border-slate-200 bg-white text-slate-700"
-                                  }`}
-                              >
-                                <FileText size={12} className="shrink-0 opacity-60" />
-                                <span className="truncate flex-1">{summaryFile.name}</span>
-                                {summaryStatus === "completed" && (
-                                  <CheckCircle size={12} className="text-emerald-500 shrink-0" />
-                                )}
-                                {summaryStatus === "failed" && (
-                                  <AlertCircle size={12} className="text-red-500 shrink-0" />
-                                )}
-                                {summaryStatus === "uploading" && (
-                                  <Loader2 size={12} className="animate-spin text-amber-500 shrink-0" />
-                                )}
-                                {summaryStatus !== "uploading" && summaryStatus !== "processing" && (
-                                  <button
-                                    onClick={removeSummaryFile}
-                                    className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
-                                  >
-                                    <X size={12} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Progress bar */}
-                        {summaryStatus === "uploading" && (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between text-[11px] font-semibold">
-                              <span className="text-slate-500">Uploading...</span>
-                              <span className="text-amber-600">{summaryProgress}%</span>
-                            </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                                style={{ width: `${summaryProgress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Error banner */}
-                        {summaryError && (
-                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                            <AlertCircle size={15} className="text-red-500 shrink-0 mt-0.5" />
-                            <p className="text-red-700 text-[13px] font-semibold">
-                              {summaryError}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Generated Documents Display */}
-                      {(patientFriendlyUrl || insuranceReadyUrl) && (
-                        <div className="flex flex-col gap-3 mt-4">
-                          <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                            Generated Documents
-                          </p>
-
-                          {patientFriendlyUrl && (
-                            <a
-                              href={patientFriendlyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white border border-emerald-200 rounded-2xl hover:border-emerald-400 transition-all group"
-                            >
-                              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 transition-all">
-                                <FileText size={18} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-slate-800 font-bold text-[14px]">
-                                  Patient-Friendly Document
-                                </p>
-                                <p className="text-slate-500 text-[12px] truncate">
-                                  Click to view or download
-                                </p>
-                              </div>
-                              <CheckCircle size={18} className="text-emerald-500 shrink-0" />
-                            </a>
-                          )}
-
-                          {insuranceReadyUrl && (
-                            <a
-                              href={insuranceReadyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white border border-blue-200 rounded-2xl hover:border-blue-400 transition-all group"
-                            >
-                              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-all">
-                                <Receipt size={18} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-slate-800 font-bold text-[14px]">
-                                  Insurance-Ready Document
-                                </p>
-                                <p className="text-slate-500 text-[12px] truncate">
-                                  Click to view or download
-                                </p>
-                              </div>
-                              <CheckCircle size={18} className="text-blue-500 shrink-0" />
-                            </a>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ── Right col: Actions (2/5 width) ─────────────────────── */}
-                    <div className="lg:col-span-2 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        Generate Documents
-                      </p>
-
-                      {/* Status card */}
-                      <div className="rounded-2xl bg-white border border-slate-200 p-4">
-                        <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3">
-                          Document Status
-                        </p>
-                        <div className="flex flex-col gap-3">
-                          {/* Summary status */}
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${summaryStatus === "completed"
-                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                : summaryStatus === "failed"
-                                  ? "bg-red-500 shadow-red-300 shadow-sm"
-                                  : summaryStatus === "uploading"
-                                    ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                    : "bg-slate-300"
-                                }`}
-                            />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Discharge Summary
-                            </span>
-                            {summaryStatus === "completed" && (
-                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
-                            )}
-                          </div>
-
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-
-                          {/* Patient-friendly status */}
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${patientFriendlyUrl
-                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                : isGeneratingPatientDoc
-                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                  : "bg-slate-300"
-                                }`}
-                            />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Patient-Friendly
-                            </span>
-                            {patientFriendlyUrl && (
-                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
-                            )}
-                          </div>
-
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-
-                          {/* Insurance-ready status */}
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${insuranceReadyUrl
-                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                : isGeneratingInsuranceDoc
-                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                  : "bg-slate-300"
-                                }`}
-                            />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Insurance-Ready
-                            </span>
-                            {insuranceReadyUrl && (
-                              <CheckCircle size={14} className="text-emerald-500 ml-auto" />
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex flex-col gap-3 mt-auto">
-                        {/* Generate Patient-Friendly */}
-                        <button
-                          onClick={handleGeneratePatientFriendly}
-                          disabled={summaryStatus !== "completed" || isGeneratingPatientDoc || isGeneratingInsuranceDoc}
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingPatientDoc ? (
-                            <>
-                              <Loader2 size={15} className="animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText size={15} />
-                              {patientFriendlyUrl ? "Regenerate" : "Generate"} Patient-Friendly
-                            </>
-                          )}
-                        </button>
-
-                        {/* Generate Insurance-Ready */}
-                        <button
-                          onClick={handleGenerateInsuranceReady}
-                          disabled={summaryStatus !== "completed" || isGeneratingPatientDoc || isGeneratingInsuranceDoc}
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingInsuranceDoc ? (
-                            <>
-                              <Loader2 size={15} className="animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Receipt size={15} />
-                              Generate Insurance-Ready Doc
-                            </>
-                          )}
-                        </button>
                       </div>
                     </div>
                   </div>

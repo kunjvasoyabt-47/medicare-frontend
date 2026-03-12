@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Activity, Loader2, UserCircle } from "lucide-react";
+import { LogOut, Activity, Loader2, UserCircle, Menu, X } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
-export default function PatientNavbar({ sidebarOpen }) {
+export default function PatientNavbar({ sidebarOpen, onMenuToggle }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -38,8 +38,17 @@ export default function PatientNavbar({ sidebarOpen }) {
     <header
       className={`fixed top-0 right-0 z-30 bg-white border-b border-slate-100 shadow-sm h-16
         flex items-center px-5 gap-3 transition-all duration-300 ease-in-out
-        left-0 font-sans ${sidebarOpen ? "lg:left-64" : "lg:left-16"}`}
+        left-0 font-sans ${sidebarOpen ? "lg:left-64" : "lg:left-0"}`}
     >
+      {/* Menu toggle for all screen sizes */}
+      <button
+        onClick={onMenuToggle}
+        className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+        aria-label="Toggle sidebar"
+      >
+        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+      </button>
+
       {/* Brand */}
       <div className="flex items-center gap-2.5">
         <div className="bg-[#111111] p-1.5 rounded-xl text-white shadow-md">

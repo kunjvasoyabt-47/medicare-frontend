@@ -47,7 +47,7 @@ export default function AdminSidebar({ isOpen, onClose, onMenuToggle }) {
       <aside
         className={`fixed top-0 left-0 h-full bg-[#111111] z-50 flex flex-col font-sans
           transition-all duration-300 ease-in-out overflow-hidden
-          ${isOpen ? "w-64 translate-x-0" : "lg:w-16 lg:translate-x-0 w-64 -translate-x-full"}`}
+          ${isOpen ? "w-64 translate-x-0" : "-translate-x-full"}`}
       >
         {/* Sidebar header — brand + hamburger toggle */}
         <div

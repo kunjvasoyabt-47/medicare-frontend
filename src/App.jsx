@@ -3,6 +3,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PatientDetails from "./pages/PatientDetails";
+import TelegramChatBot from "./components/TelegramChatBot";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -127,6 +128,9 @@ function App() {
         {/* Root redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
       </Routes>
+
+      {/* Telegram Chat Bot - visible on all pages */}
+      <TelegramChatBot />
     </main>
   );
 }

@@ -4,8 +4,7 @@ import AdminSidebar from "./AdminSidebar";
 
 export default function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(() => {
-    // On mobile default closed; on desktop restore last preference (default open)
-    if (window.innerWidth < 1024) return false;
+    if (typeof window !== "undefined" && window.innerWidth < 1024) return false;
     const saved = sessionStorage.getItem("admin_sidebar");
     return saved === null ? true : saved === "true";
   });
@@ -14,17 +13,21 @@ export default function AdminLayout({ children }) {
     sessionStorage.setItem("admin_sidebar", String(sidebarOpen));
   }, [sidebarOpen]);
 
+  const handleMenuToggle = () => {
+    setSidebarOpen((o) => !o);
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 font-sans">
-      <AdminNavbar sidebarOpen={sidebarOpen} />
+      <AdminNavbar sidebarOpen={sidebarOpen} onMenuToggle={handleMenuToggle} />
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onMenuToggle={() => setSidebarOpen((o) => !o)}
+        onMenuToggle={handleMenuToggle}
       />
 
       <main
-        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:pl-64" : "lg:pl-16"
+        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "pl-64" : "pl-0"
           }`}
       >
         <div className="p-4 md:p-6 lg:p-8">{children}</div>
