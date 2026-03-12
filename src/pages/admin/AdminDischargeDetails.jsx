@@ -9,11 +9,8 @@ import {
   ExternalLink,
   Loader2,
   Calendar,
-  User,
   Mail,
-  CheckCircle,
   AlertCircle,
-  Activity,
 } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import api from "../../lib/axios";
@@ -100,8 +97,8 @@ function MedCard({ med }) {
         </div>
         <span
           className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${med.is_active
-              ? "bg-emerald-50 text-emerald-600"
-              : "bg-slate-100 text-slate-500"
+            ? "bg-emerald-50 text-emerald-600"
+            : "bg-slate-100 text-slate-500"
             }`}
         >
           {med.is_active ? "Active" : "Inactive"}
@@ -121,7 +118,27 @@ export default function AdminDischargeDetails() {
   useEffect(() => {
     api
       .get(`/admin/discharge/${id}/documents`)
-      .then((r) => setData(r.data))
+      .then((r) => {
+        console.log("Discharge documents:", r.data);
+        setData(r.data);
+
+        // Now fetch the PDF URLs
+        api
+          .get(`/admin/discharge/${id}/pdfs`)
+          .then((pdfResponse) => {
+            console.log("PDF documents fetched:", pdfResponse.data);
+            // Merge the PDF URLs with existing data
+            setData((prevData) => ({
+              ...prevData,
+              discharge_summary_url: pdfResponse.data.discharge_summary_url,
+              patient_friendly_summary_url: pdfResponse.data.patient_friendly_summary_url,
+              insurance_ready_url: pdfResponse.data.insurance_ready_url
+            }));
+          })
+          .catch((err) => {
+            console.error("Failed to fetch PDF documents:", err);
+          });
+      })
       .catch((err) => {
         if (err?.response?.status === 404)
           setError("Discharge record not found.");
@@ -223,6 +240,24 @@ export default function AdminDischargeDetails() {
                 {data.medications?.length || 0} Medications
               </span>
             </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+              <FileText size={14} className="text-emerald-300" />
+              <span className="text-white text-[13px] font-bold">
+                {data.discharge_summary_url ? "1" : "0"} Discharge Summary
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+              <FileText size={14} className="text-amber-300" />
+              <span className="text-white text-[13px] font-bold">
+                {data.patient_friendly_summary_url ? "1" : "0"} Patient-Friendly
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+              <FileText size={14} className="text-rose-300" />
+              <span className="text-white text-[13px] font-bold">
+                {data.insurance_ready_url ? "1" : "0"} Insurance-Ready
+              </span>
+            </div>
           </div>
         </div>
 
@@ -282,6 +317,78 @@ export default function AdminDischargeDetails() {
                     url={b.bill_url}
                   />
                 ))}
+              </div>
+            )}
+          </div>
+
+          {/* Discharge Summary */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader
+              icon={FileText}
+              title="Discharge Summary"
+              count={data.discharge_summary_url ? 1 : 0}
+              colorClass="text-emerald-600"
+              bgClass="bg-emerald-50"
+            />
+            {!data.discharge_summary_url ? (
+              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+                No discharge summary available
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <PdfCard
+                  title="Discharge Summary"
+                  subtitle="Complete discharge documentation"
+                  url={data.discharge_summary_url}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Patient-Friendly Report */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader
+              icon={FileText}
+              title="Patient-Friendly Report"
+              count={data.patient_friendly_summary_url ? 1 : 0}
+              colorClass="text-amber-600"
+              bgClass="bg-amber-50"
+            />
+            {!data.patient_friendly_summary_url ? (
+              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+                No patient-friendly report available
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <PdfCard
+                  title="Patient-Friendly Report"
+                  subtitle="Easy-to-understand discharge information"
+                  url={data.patient_friendly_summary_url}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Insurance-Ready Document */}
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+            <SectionHeader
+              icon={FileText}
+              title="Insurance-Ready Document"
+              count={data.insurance_ready_url ? 1 : 0}
+              colorClass="text-rose-600"
+              bgClass="bg-rose-50"
+            />
+            {!data.insurance_ready_url ? (
+              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+                No insurance-ready document available
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <PdfCard
+                  title="Insurance-Ready Document"
+                  subtitle="Formatted for insurance submission"
+                  url={data.insurance_ready_url}
+                />
               </div>
             )}
           </div>

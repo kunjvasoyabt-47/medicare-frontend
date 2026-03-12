@@ -155,13 +155,12 @@ function DropZone({
         }}
         onDragLeave={() => setDrag(false)}
         onDrop={handleDrop}
-        className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${
-          disabled
-            ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
-            : drag
-              ? `${c.ring} ring-2 ${c.bg} border-transparent`
-              : "border-slate-200 bg-slate-50 hover:border-slate-300"
-        }`}
+        className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${disabled
+          ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
+          : drag
+            ? `${c.ring} ring-2 ${c.bg} border-transparent`
+            : "border-slate-200 bg-slate-50 hover:border-slate-300"
+          }`}
       >
         <input
           id={inputId}
@@ -315,15 +314,14 @@ function TimelineRow({
           {Array.from({ length: total }).map((_, i) => (
             <div
               key={i}
-              className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${
-                i < processed
-                  ? state === "failed" && i === processed - 1
-                    ? "bg-red-400"
-                    : "bg-emerald-400"
-                  : i === processed && state === "active"
-                    ? "bg-amber-300 animate-pulse"
-                    : "bg-slate-200"
-              }`}
+              className={`w-2.5 h-2.5 rounded-full transition-all duration-500 ${i < processed
+                ? state === "failed" && i === processed - 1
+                  ? "bg-red-400"
+                  : "bg-emerald-400"
+                : i === processed && state === "active"
+                  ? "bg-amber-300 animate-pulse"
+                  : "bg-slate-200"
+                }`}
             />
           ))}
         </div>
@@ -523,28 +521,21 @@ export default function PatientDetails() {
   };
 
   const handleGenerateInsuranceReady = async () => {
-    if (!summaryFile) {
-      setSummaryError("Please upload a discharge summary first");
-      return;
-    }
-
     setIsGeneratingInsuranceDoc(true);
     setSummaryError(null);
 
     try {
-      const formData = new FormData();
-      formData.append("file", summaryFile);
+      // Call the backend endpoint to generate IRD
+      const response = await api.post(`/api/patient/${id}/generate-ird`);
 
-      const response = await api.post(
-        `/api/insurance-ready-report/convert-pdf/${id}`,
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
-
-      setInsuranceReadyUrl(response.data.insurance_ready_url);
       showToast("Insurance-ready document generated successfully!");
+
+      // Update local state with the IRD URL from response
+      setInsuranceReadyUrl(response.data.ird_url);
+
+      // Refresh patient data to get the updated IRD URL from database
+      const updatedPatient = await api.get(`/admin/patients/${id}`);
+      setData(updatedPatient.data);
     } catch (err) {
       let errorMsg = "Failed to generate insurance-ready document";
 
@@ -609,6 +600,14 @@ export default function PatientDetails() {
       try {
         const res = await api.get(`/admin/patients/${id}`);
         setData(res.data);
+
+        // Initialize URLs from database if they exist
+        if (res.data.patient_friendly_url) {
+          setPatientFriendlyUrl(res.data.patient_friendly_url);
+        }
+        if (res.data.ird_url) {
+          setInsuranceReadyUrl(res.data.ird_url);
+        }
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -856,8 +855,8 @@ export default function PatientDetails() {
 
     if (
       pendingReports.length +
-        pendingBills.length +
-        pendingPrescriptions.length ===
+      pendingBills.length +
+      pendingPrescriptions.length ===
       0
     ) {
       setSubmitError("Please upload the remaining/failed files for retry.");
@@ -939,11 +938,10 @@ export default function PatientDetails() {
       {/* ── Toast notification ─────────────────────────────────────────────── */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold transition-all duration-500 animate-in slide-in-from-top-3 ${
-            toast.type === "error"
-              ? "bg-red-600 text-white border-red-700 shadow-red-500/30"
-              : "bg-emerald-600 text-white border-emerald-700 shadow-emerald-500/30"
-          }`}
+          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold transition-all duration-500 animate-in slide-in-from-top-3 ${toast.type === "error"
+            ? "bg-red-600 text-white border-red-700 shadow-red-500/30"
+            : "bg-emerald-600 text-white border-emerald-700 shadow-emerald-500/30"
+            }`}
         >
           {toast.type === "error" ? (
             <AlertCircle size={16} className="shrink-0" />
@@ -1447,12 +1445,11 @@ export default function PatientDetails() {
                               setSummaryError("Only PDF files are allowed");
                             }
                           }}
-                          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${
-                            summaryStatus === "uploading" ||
+                          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${summaryStatus === "uploading" ||
                             summaryStatus === "processing"
-                              ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
-                              : "border-slate-200 bg-slate-50 hover:border-slate-300"
-                          }`}
+                            ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50"
+                            : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                            }`}
                         >
                           <input
                             id="summary-upload"
@@ -1485,15 +1482,14 @@ export default function PatientDetails() {
                           ) : (
                             <div className="p-3">
                               <div
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[12px] font-semibold ${
-                                  summaryStatus === "completed"
-                                    ? "border-emerald-200 bg-emerald-50/60 text-emerald-800"
-                                    : summaryStatus === "failed"
-                                      ? "border-red-200 bg-red-50/60 text-red-700"
-                                      : summaryStatus === "uploading"
-                                        ? "border-amber-200 bg-amber-50/60 text-amber-800"
-                                        : "border-slate-200 bg-white text-slate-700"
-                                }`}
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[12px] font-semibold ${summaryStatus === "completed"
+                                  ? "border-emerald-200 bg-emerald-50/60 text-emerald-800"
+                                  : summaryStatus === "failed"
+                                    ? "border-red-200 bg-red-50/60 text-red-700"
+                                    : summaryStatus === "uploading"
+                                      ? "border-amber-200 bg-amber-50/60 text-amber-800"
+                                      : "border-slate-200 bg-white text-slate-700"
+                                  }`}
                               >
                                 <FileText
                                   size={12}
@@ -1643,15 +1639,14 @@ export default function PatientDetails() {
                           {/* Summary status */}
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${
-                                summaryStatus === "completed"
-                                  ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                  : summaryStatus === "failed"
-                                    ? "bg-red-500 shadow-red-300 shadow-sm"
-                                    : summaryStatus === "uploading"
-                                      ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                      : "bg-slate-300"
-                              }`}
+                              className={`w-3 h-3 rounded-full shrink-0 ${summaryStatus === "completed"
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : summaryStatus === "failed"
+                                  ? "bg-red-500 shadow-red-300 shadow-sm"
+                                  : summaryStatus === "uploading"
+                                    ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                    : "bg-slate-300"
+                                }`}
                             />
                             <span className="text-[13px] text-slate-600 font-semibold">
                               Discharge Summary
@@ -1669,13 +1664,12 @@ export default function PatientDetails() {
                           {/* Patient-friendly status */}
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${
-                                patientFriendlyUrl
-                                  ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                  : isGeneratingPatientDoc
-                                    ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                    : "bg-slate-300"
-                              }`}
+                              className={`w-3 h-3 rounded-full shrink-0 ${patientFriendlyUrl
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : isGeneratingPatientDoc
+                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                  : "bg-slate-300"
+                                }`}
                             />
                             <span className="text-[13px] text-slate-600 font-semibold">
                               Patient-Friendly
@@ -1693,13 +1687,12 @@ export default function PatientDetails() {
                           {/* Insurance-ready status */}
                           <div className="flex items-center gap-2">
                             <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${
-                                insuranceReadyUrl
-                                  ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
-                                  : isGeneratingInsuranceDoc
-                                    ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
-                                    : "bg-slate-300"
-                              }`}
+                              className={`w-3 h-3 rounded-full shrink-0 ${insuranceReadyUrl
+                                ? "bg-emerald-500 shadow-emerald-300 shadow-sm"
+                                : isGeneratingInsuranceDoc
+                                  ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm"
+                                  : "bg-slate-300"
+                                }`}
                             />
                             <span className="text-[13px] text-slate-600 font-semibold">
                               Insurance-Ready
@@ -1720,7 +1713,6 @@ export default function PatientDetails() {
                         <button
                           onClick={handleGeneratePatientFriendly}
                           disabled={
-                            summaryStatus !== "completed" ||
                             isGeneratingPatientDoc ||
                             isGeneratingInsuranceDoc
                           }
@@ -1746,7 +1738,6 @@ export default function PatientDetails() {
                         <button
                           onClick={handleGenerateInsuranceReady}
                           disabled={
-                            summaryStatus !== "completed" ||
                             isGeneratingPatientDoc ||
                             isGeneratingInsuranceDoc
                           }
@@ -1777,11 +1768,10 @@ export default function PatientDetails() {
             {/* Toggle panel */}
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${
-                isEditing
-                  ? "bg-white text-slate-700 border border-slate-300 hover:border-slate-500"
-                  : "bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10"
-              }`}
+              className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${isEditing
+                ? "bg-white text-slate-700 border border-slate-300 hover:border-slate-500"
+                : "bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10"
+                }`}
             >
               {isEditing ? (
                 <>

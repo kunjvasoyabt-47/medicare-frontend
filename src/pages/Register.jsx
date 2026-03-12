@@ -9,7 +9,7 @@ import {
   FileText,
   Lock,
   ArrowRight,
-  CheckCircle2, 
+  CheckCircle2,
   AlertCircle,
   XCircle
 } from "lucide-react";
@@ -25,16 +25,144 @@ const FEATURES = [
   { icon: Lock, text: "Your data is always private and secure" },
 ];
 
+const COUNTRY_CODES = [
+  { code: "+91", country: "India" },
+  { code: "+1", country: "USA" },
+  { code: "+44", country: "UK" },
+  { code: "+61", country: "Australia" },
+  { code: "+81", country: "Japan" },
+  { code: "+86", country: "China" },
+  { code: "+33", country: "France" },
+  { code: "+49", country: "Germany" },
+  { code: "+39", country: "Italy" },
+  { code: "+34", country: "Spain" },
+  { code: "+31", country: "Netherlands" },
+  { code: "+32", country: "Belgium" },
+  { code: "+41", country: "Switzerland" },
+  { code: "+43", country: "Austria" },
+  { code: "+45", country: "Denmark" },
+  { code: "+46", country: "Sweden" },
+  { code: "+47", country: "Norway" },
+  { code: "+48", country: "Poland" },
+  { code: "+55", country: "Brazil" },
+  { code: "+56", country: "Chile" },
+  { code: "+57", country: "Colombia" },
+  { code: "+60", country: "Malaysia" },
+  { code: "+62", country: "Indonesia" },
+  { code: "+63", country: "Philippines" },
+  { code: "+64", country: "New Zealand" },
+  { code: "+65", country: "Singapore" },
+  { code: "+66", country: "Thailand" },
+  { code: "+82", country: "South Korea" },
+  { code: "+84", country: "Vietnam" },
+  { code: "+90", country: "Turkey" },
+];
+
 export default function Register({ togglePage }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [regError, setRegError] = useState("");
   const [focusedField, setFocusedField] = useState("");
+  const [countryCodeSuggestions, setCountryCodeSuggestions] = useState([]);
+  const [showCountrySuggestions, setShowCountrySuggestions] = useState(false);
   const { checkAuth } = useAuth();
   const navigate = useNavigate();
 
   const handleNavigation = (path) => {
     if (togglePage) togglePage();
     navigate(path);
+  };
+
+  const handleCountryCodeChange = (value, setFieldValue) => {
+    setFieldValue("country_code", value);
+
+    if (value.trim() === "") {
+      setCountryCodeSuggestions([]);
+      setShowCountrySuggestions(false);
+    } else {
+      // Check if the input matches a country name exactly (case-insensitive)
+      const exactMatch = COUNTRY_CODES.find(
+        (item) => item.country.toLowerCase() === value.toLowerCase()
+      );
+
+      if (exactMatch) {
+        // Auto-convert country name to country code
+        setFieldValue("country_code", exactMatch.code);
+        setCountryCodeSuggestions([]);
+        setShowCountrySuggestions(false);
+      } else {
+        // Show suggestions for partial matches
+        const filtered = COUNTRY_CODES.filter(
+          (item) =>
+            item.code.toLowerCase().includes(value.toLowerCase()) ||
+            item.country.toLowerCase().includes(value.toLowerCase())
+        );
+        setCountryCodeSuggestions(filtered);
+        setShowCountrySuggestions(true);
+      }
+    }
+  };
+
+  const handleSelectCountry = (code, setFieldValue) => {
+    setFieldValue("country_code", code);
+    setShowCountrySuggestions(false);
+    setCountryCodeSuggestions([]);
+  };
+
+  const handleCountryCodeBlur = (value, setFieldValue, setFieldTouched, validateField) => {
+    // Only auto-convert if user didn't click on a suggestion
+    // The suggestion click will handle its own conversion
+
+    // Check if input is a country code (starts with +)
+    if (value.startsWith("+")) {
+      // It's already a code, keep it
+      setShowCountrySuggestions(false);
+      setFocusedField("");
+      setFieldTouched("country_code", true, false);
+      validateField("country_code");
+    } else if (value.trim() !== "") {
+      // It's a country name or partial match, try to find and convert
+      const exactMatch = COUNTRY_CODES.find(
+        (item) => item.country.toLowerCase() === value.toLowerCase()
+      );
+
+      if (exactMatch) {
+        // Exact match found, convert to code
+        setFieldValue("country_code", exactMatch.code, true); // true = skip validation
+        setShowCountrySuggestions(false);
+        setFocusedField("");
+        setFieldTouched("country_code", true, false);
+        validateField("country_code");
+      } else {
+        // Partial match, find the best match
+        const partialMatch = COUNTRY_CODES.find(
+          (item) =>
+            item.country.toLowerCase().startsWith(value.toLowerCase()) ||
+            item.code.toLowerCase().includes(value.toLowerCase())
+        );
+
+        if (partialMatch) {
+          // Found a match, convert to code
+          setFieldValue("country_code", partialMatch.code, true); // true = skip validation
+          setShowCountrySuggestions(false);
+          setFocusedField("");
+          setFieldTouched("country_code", true, false);
+          validateField("country_code");
+        } else {
+          // No match found, reset to default
+          setFieldValue("country_code", "+91", true); // true = skip validation
+          setShowCountrySuggestions(false);
+          setFocusedField("");
+          setFieldTouched("country_code", true, false);
+          validateField("country_code");
+        }
+      }
+    } else {
+      // Empty value
+      setShowCountrySuggestions(false);
+      setFocusedField("");
+      setFieldTouched("country_code", true, false);
+      validateField("country_code");
+    }
   };
 
   return (
@@ -62,7 +190,7 @@ export default function Register({ togglePage }) {
               journey with a platform built for you.
             </p>
             <div className="flex flex-col gap-3.5">
-             {FEATURES.map((feature) => {
+              {FEATURES.map((feature) => {
                 const FeatureIcon = feature.icon;
                 return (
                   <div key={feature.text} className="flex items-center gap-3">
@@ -108,6 +236,8 @@ export default function Register({ togglePage }) {
                   email: "",
                   gender: "",
                   dob: "",
+                  country_code: "+91",
+                  phone_number: "",
                   password: "",
                   confirmPassword: "",
                 }}
@@ -122,6 +252,8 @@ export default function Register({ togglePage }) {
                       email: values.email,
                       dob: values.dob,
                       gender: values.gender,
+                      country_code: values.country_code,
+                      phone_number: values.phone_number,
                       password: values.password,
                     });
                     localStorage.setItem(
@@ -147,6 +279,9 @@ export default function Register({ togglePage }) {
                   isSubmitting,
                   handleChange,
                   handleBlur,
+                  setFieldValue,
+                  setFieldTouched,
+                  validateField,
                 }) => (
                   <Form>
                     {/* Row 1 */}
@@ -281,6 +416,108 @@ export default function Register({ togglePage }) {
                         {errors.dob && touched.dob && focusedField !== "dob" ? (
                           <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
                             <XCircle size={11} /> {errors.dob}
+                          </p>
+                        ) : (
+                          <div className="min-h-4" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Row 3 - Phone Number */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-3">
+                      <div className="mb-2.5 relative">
+                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Country Code</label>
+                        <input
+                          type="text"
+                          name="country_code"
+                          placeholder="Search or type +91"
+                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
+                            ? "border-red-300 bg-red-50"
+                            : !errors.country_code && values.country_code
+                              ? "border-emerald-400 bg-emerald-50"
+                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
+                            }`}
+                          value={values.country_code}
+                          onChange={(e) => handleCountryCodeChange(e.target.value, setFieldValue)}
+                          onFocus={() => {
+                            setFocusedField("country_code");
+                            if (values.country_code) {
+                              const filtered = COUNTRY_CODES.filter(
+                                (item) =>
+                                  item.code.toLowerCase().includes(values.country_code.toLowerCase()) ||
+                                  item.country.toLowerCase().includes(values.country_code.toLowerCase())
+                              );
+                              setCountryCodeSuggestions(filtered);
+                              setShowCountrySuggestions(true);
+                            }
+                          }}
+                          onBlur={(e) => {
+                            handleCountryCodeBlur(values.country_code, setFieldValue, setFieldTouched, validateField);
+                          }}
+                        />
+
+                        {/* Suggestions Dropdown */}
+                        {showCountrySuggestions && countryCodeSuggestions.length > 0 && (
+                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg z-10 max-h-48 overflow-y-auto">
+                            {countryCodeSuggestions.map((item) => (
+                              <button
+                                key={item.code}
+                                type="button"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  handleSelectCountry(item.code, setFieldValue);
+                                }}
+                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center justify-between"
+                              >
+                                <span className="font-semibold text-slate-900">{item.code}</span>
+                                <span className="text-xs text-slate-500">{item.country}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {errors.country_code &&
+                          touched.country_code &&
+                          focusedField !== "country_code" ? (
+                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
+                            <XCircle size={11} /> {errors.country_code}
+                          </p>
+                        ) : (
+                          <div className="min-h-4" />
+                        )}
+                      </div>
+
+                      <div className="mb-2.5 sm:col-span-2">
+                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Phone Number</label>
+                        <input
+                          name="phone_number"
+                          type="tel"
+                          placeholder="9876543210"
+                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.phone_number && touched.phone_number && focusedField !== "phone_number"
+                            ? "border-red-300 bg-red-50"
+                            : !errors.phone_number && values.phone_number
+                              ? "border-emerald-400 bg-emerald-50"
+                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
+                            }`}
+                          value={values.phone_number}
+                          onChange={handleChange}
+                          onFocus={() => setFocusedField("phone_number")}
+                          onBlur={(e) => {
+                            setFocusedField("");
+                            handleBlur(e);
+                          }}
+                        />
+                        {errors.phone_number &&
+                          touched.phone_number &&
+                          focusedField !== "phone_number" ? (
+                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
+                            <XCircle size={11} /> {errors.phone_number}
+                          </p>
+                        ) : !errors.phone_number &&
+                          values.phone_number &&
+                          focusedField !== "phone_number" ? (
+                          <p className="text-xs font-semibold text-emerald-600 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
+                            <CheckCircle2 size={11} /> Valid phone number
                           </p>
                         ) : (
                           <div className="min-h-4" />

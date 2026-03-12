@@ -118,7 +118,25 @@ function PatientDischargeDetails() {
   useEffect(() => {
     api
       .get(`/patient/discharge/${id}/documents`)
-      .then((r) => setData(r.data))
+      .then((r) => {
+        setData(r.data);
+
+        // Now fetch the PDF URLs
+        api
+          .get(`/patient/discharge/${id}/pdfs`)
+          .then((pdfResponse) => {
+            // Merge the new document URLs with existing data
+            setData((prevData) => ({
+              ...prevData,
+              discharge_summary_url: pdfResponse.data.discharge_summary_url,
+              patient_friendly_summary_url: pdfResponse.data.patient_friendly_summary_url,
+              insurance_ready_url: pdfResponse.data.insurance_ready_url
+            }));
+          })
+          .catch((err) => {
+            console.error("Failed to fetch additional documents:", err);
+          });
+      })
       .catch((err) => {
         if (err?.response?.status === 404)
           setError("Discharge record not found.");
@@ -201,6 +219,18 @@ function PatientDischargeDetails() {
               <Pill size={14} className="text-teal-300" />
               <span className="text-white text-[13px] font-bold">
                 {data.medications?.length || 0} Medications
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+              <FileText size={14} className="text-emerald-300" />
+              <span className="text-white text-[13px] font-bold">
+                {data.discharge_summary_url ? "1" : "0"} Discharge Summary
+              </span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
+              <FileText size={14} className="text-amber-300" />
+              <span className="text-white text-[13px] font-bold">
+                {data.patient_friendly_summary_url ? "1" : "0"} Patient-Friendly
               </span>
             </div>
           </div>
@@ -295,11 +325,11 @@ function PatientDischargeDetails() {
             <SectionHeader
               icon={FileText}
               title="Patient-Friendly Report"
-              count={data.patient_friendly_url ? 1 : 0}
+              count={data.patient_friendly_summary_url ? 1 : 0}
               colorClass="text-amber-600"
               bgClass="bg-amber-50"
             />
-            {!data.patient_friendly_url ? (
+            {!data.patient_friendly_summary_url ? (
               <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
                 No patient-friendly report available
               </p>
@@ -308,7 +338,7 @@ function PatientDischargeDetails() {
                 <PdfCard
                   title="Patient-Friendly Report"
                   subtitle="Easy-to-understand discharge information"
-                  url={data.patient_friendly_url}
+                  url={data.patient_friendly_summary_url}
                 />
               </div>
             )}
