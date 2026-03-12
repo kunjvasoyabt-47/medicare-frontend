@@ -69,6 +69,12 @@ export const registerSchema = Yup.object().shape({
     /* Ensures user isn't older than 150 years */
     .min(maxAgeDate, "Age cannot exceed 150 years")
     .required("Required"),
+  country_code: Yup.string()
+    .required("Country code is required")
+    .matches(/^\+\d{1,3}$/, "Invalid country code format"),
+  phone_number: Yup.string()
+    .required("Phone number is required")
+    .matches(/^\d{7,15}$/, "Phone number must be 7-15 digits"),
   password: Yup.string()
     .min(8, "Min 8 characters")
     .matches(passwordRegex, "Need: 1 Upper, 1 Lower, 1 Num, 1 Special")
