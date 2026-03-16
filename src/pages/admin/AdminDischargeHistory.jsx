@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { History, ChevronRight, Loader2, Calendar } from "lucide-react";
+import {
+  History,
+  ChevronRight,
+  Loader2,
+  Calendar,
+  Trash2,
+  X,
+} from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import SearchBar from "../../components/SearchBar";
 import FilterBar from "../../components/FilterBar";
@@ -21,6 +28,9 @@ export default function AdminDischargeHistory() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [toast, setToast] = useState({ message: "", type: "success" });
 
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page")) || 1;
@@ -61,6 +71,36 @@ export default function AdminDischargeHistory() {
       active = false;
     };
   }, [search, page, sort, dateFrom, dateTo]);
+
+  const showToast = useCallback((message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "success" }), 3500);
+  }, []);
+
+  const handleDeleteDischarge = useCallback(async () => {
+    if (!confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
+    try {
+      await api.delete(`/api/discharge/${confirmDeleteId}`);
+
+      setItems((prev) =>
+        prev.filter((item) => item.discharge_id !== confirmDeleteId),
+      );
+      setTotal((prev) => Math.max(0, prev - 1));
+
+      if (items.length === 1 && page > 1) {
+        updateParams({ page: page - 1 });
+      }
+
+      showToast("Discharge history deleted successfully.", "success");
+    } catch (err) {
+      const detail = err?.response?.data?.detail;
+      showToast(detail || "Failed to delete discharge history.", "error");
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
+  }, [confirmDeleteId, items.length, page, showToast, updateParams]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -127,7 +167,7 @@ export default function AdminDischargeHistory() {
                   <th className="text-left py-4 px-4 text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">
                     Documents
                   </th>
-                  <th className="py-4 px-4 w-10" />
+                  <th className="py-4 px-4 w-20" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
@@ -196,10 +236,29 @@ export default function AdminDischargeHistory() {
                         </div>
                       </td>
                       <td className="py-4 px-4 text-right">
-                        <ChevronRight
-                          size={16}
-                          className="text-slate-300 group-hover:text-slate-600 ml-auto transition-colors"
-                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setConfirmDeleteId(d.discharge_id);
+                            }}
+                            disabled={deletingId === d.discharge_id}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label={`Delete discharge ${d.discharge_id}`}
+                            title="Delete discharge history"
+                          >
+                            {deletingId === d.discharge_id ? (
+                              <Loader2 size={16} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={16} />
+                            )}
+                          </button>
+                          <ChevronRight
+                            size={16}
+                            className="text-slate-300 group-hover:text-slate-600 transition-colors"
+                          />
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -219,6 +278,63 @@ export default function AdminDischargeHistory() {
             />
           </div>
         </div>
+
+        {confirmDeleteId && (
+          <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-5">
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h3 className="text-slate-900 font-black text-[18px]">
+                  Delete discharge history?
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                  aria-label="Close"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="text-slate-600 text-[14px] leading-relaxed">
+                This will permanently remove discharge #{confirmDeleteId} and
+                all related records through cascade delete. This action cannot
+                be undone.
+              </p>
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeleteId(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteDischarge}
+                  disabled={Boolean(deletingId)}
+                  className="px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-[13px] hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+                >
+                  {deletingId ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : null}
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {toast.message && (
+          <div
+            className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg border text-[13px] font-semibold ${
+              toast.type === "success"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-red-50 text-red-700 border-red-200"
+            }`}
+          >
+            {toast.message}
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
