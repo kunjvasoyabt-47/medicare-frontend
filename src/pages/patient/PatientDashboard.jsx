@@ -7,12 +7,13 @@ import {
   FlaskConical,
   ChevronRight,
   Calendar,
-  Loader2,
   CheckCircle,
   Clock,
 } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }) {
   return (
@@ -41,7 +42,7 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     api
-      .get("/patient/dashboard")
+      .get(API_ROUTES.patient.dashboard)
       .then((r) => setData(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -50,9 +51,7 @@ export default function PatientDashboard() {
   if (loading) {
     return (
       <PatientLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 size={36} className="animate-spin text-slate-300" />
-        </div>
+        <SystemLoader label="Loading Dashboard" sublabel="Preparing your latest discharge overview" />
       </PatientLayout>
     );
   }

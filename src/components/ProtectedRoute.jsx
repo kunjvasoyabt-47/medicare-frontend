@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+  import SystemLoader from "./SystemLoader";
 
 const ProtectedRoute = ({
   children,
@@ -10,9 +11,7 @@ const ProtectedRoute = ({
   const location = useLocation();
 
   if (loading) {
-    return (
-      <div className="p-10 text-center font-bold">Verifying Session...</div>
-    );
+    return <SystemLoader fullScreen label="Verifying Session" />;
   }
 
   // Public Only page

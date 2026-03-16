@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import api from '../lib/axios';
+import { API_ROUTES } from '../lib/routes';
+import SystemLoader from '../components/SystemLoader';
 
 const AuthContext = createContext();
 
@@ -9,7 +11,7 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      const res = await api.get('/auth/me');
+      const res = await api.get(API_ROUTES.auth.me);
       setUser(res.data); 
     } catch (err) {
         console.error("Auth check failed", err);
@@ -27,7 +29,7 @@ export function AuthProvider({ children }) {
 const logout = async () => {
   try {
     const token = localStorage.getItem('refresh_token');
-    await api.post('/auth/logout', { refresh_token: token });
+    await api.post(API_ROUTES.auth.logout, { refresh_token: token });
     
   } catch (err) {
     console.error("Logout failed on server, cleaning up locally...", err);
@@ -35,16 +37,18 @@ const logout = async () => {
     localStorage.removeItem('refresh_token');
     setUser(null);
 
-    window.location.href = '/login'; 
+    window.location.href = API_ROUTES.auth.login; 
   }
 };
 
   return (
     <AuthContext.Provider value={{ user, setUser, loading, checkAuth, logout }}>
       {loading ? (
-        <div className="flex h-screen items-center justify-center bg-slate-50">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-blue-600 border-t-transparent shadow-md"></div>
-        </div>
+        <SystemLoader
+          fullScreen
+          label="Verifying Session"
+          sublabel="Checking secure access to your Medicare workspace"
+        />
       ) : (
         children
       )}

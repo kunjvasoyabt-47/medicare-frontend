@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { API_ROUTES } from './routes';
 
 
 const api = axios.create({
@@ -15,13 +16,13 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Prevents interceptor from reloading the page when a user types a wrong password or fails registration
-    if ((originalRequest.url?.includes('/login') || originalRequest.url?.includes('/register')) && originalRequest.method === 'post') {
+    if ((originalRequest.url?.includes(API_ROUTES.auth.login) || originalRequest.url?.includes(API_ROUTES.auth.register)) && originalRequest.method === 'post') {
         return Promise.reject(error);
     }
 
     const errorMessage = error.response?.data?.detail || "";
 
-    const publicPages = ['/login', '/register'];
+    const publicPages = [API_ROUTES.auth.login, API_ROUTES.auth.register];
     const isPublicPage = typeof window !== 'undefined' && publicPages.includes(window.location.pathname);
 
     // 2. Instantly handle revoked sessions (Do NOT try to refresh)
@@ -32,7 +33,7 @@ api.interceptors.response.use(
           localStorage.removeItem('refresh_token');
           // SAFETY CHECK: Only redirect if NOT already on a public page
           if (!isPublicPage) {
-              window.location.href = '/login';
+              window.location.href = API_ROUTES.auth.login;
           }
       }
       return Promise.reject(error);
@@ -47,7 +48,7 @@ api.interceptors.response.use(
       if (refreshToken) {
         try {
           await api.post(
-            '/login/refresh',
+            API_ROUTES.auth.refresh,
             { refresh_token: refreshToken },
             { withCredentials: true }
           );
@@ -59,7 +60,7 @@ api.interceptors.response.use(
               localStorage.removeItem('refresh_token');
               //Only redirect if NOT already on a public page
               if (!isPublicPage) {
-                  window.location.href = '/login';
+                  window.location.href = API_ROUTES.auth.login;
               }
           }
           return Promise.reject(refreshError);
@@ -67,7 +68,7 @@ api.interceptors.response.use(
       } else {
         // If there is no refresh token, they aren't on a public page, send them to login
         if (typeof window !== 'undefined' && !isPublicPage) {
-            window.location.href = '/login';
+            window.location.href = API_ROUTES.auth.login;
         }
         return Promise.reject(error);
       }

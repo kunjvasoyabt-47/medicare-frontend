@@ -6,13 +6,15 @@ import SearchBar from "../../components/SearchBar";
 import FilterBar from "../../components/FilterBar";
 import Pagination from "../../components/Pagination";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 const SORT_OPTIONS = [
   { value: "asc", label: "Sort: A → Z" },
   { value: "desc", label: "Sort: Z → A" },
 ];
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 7;
 
 export default function AdminPatients() {
   const navigate = useNavigate();
@@ -21,6 +23,7 @@ export default function AdminPatients() {
   const [patients, setPatients] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
 
   const search = searchParams.get("search") || "";
   const page = parseInt(searchParams.get("page")) || 1;
@@ -42,22 +45,64 @@ export default function AdminPatients() {
     let active = true;
     setLoading(true);
     api
-      .get("/admin/patients", {
+      .get(API_ROUTES.admin.patients, {
         params: { search, page, size: PAGE_SIZE, sort },
       })
       .then((r) => {
         if (!active) return;
-        setPatients(r.data.items || []);
-        setTotal(r.data.total || 0);
+        const payload = r.data;
+        const list = Array.isArray(payload)
+          ? payload
+          : payload.items || payload.patients || payload.data || [];
+
+        const hasServerPagination =
+          !Array.isArray(payload) &&
+          payload.items &&
+          (payload.total != null ||
+            payload.count != null ||
+            payload.pagination?.total != null);
+
+        if (hasServerPagination) {
+          const totalFromApi = Number(
+            payload.total ?? payload.count ?? payload.pagination?.total ?? 0,
+          );
+          setPatients(list);
+          setTotal(Number.isFinite(totalFromApi) ? totalFromApi : 0);
+          return;
+        }
+
+        // Fallback for non-paginated payloads: paginate on client.
+        const start = (page - 1) * PAGE_SIZE;
+        const end = start + PAGE_SIZE;
+        setPatients(list.slice(start, end));
+        setTotal(list.length);
       })
       .catch(console.error)
-      .finally(() => active && setLoading(false));
+      .finally(() => {
+        if (!active) return;
+        setLoading(false);
+        setHasLoadedOnce(true);
+      });
     return () => {
       active = false;
     };
   }, [search, page, sort]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  if (!hasLoadedOnce && loading) {
+    return (
+      <AdminLayout>
+        <div className="max-w-6xl mx-auto">
+          <SystemLoader
+            label="Loading Patients"
+            sublabel="Preparing patient records and status"
+            className="min-h-[60vh]"
+          />
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -117,10 +162,7 @@ export default function AdminPatients() {
                 {loading ? (
                   <tr>
                     <td colSpan={4} className="py-16 text-center">
-                      <Loader2
-                        size={28}
-                        className="animate-spin text-slate-300 mx-auto"
-                      />
+                      <SystemLoader compact label="Refreshing patients" />
                     </td>
                   </tr>
                 ) : patients.length === 0 ? (

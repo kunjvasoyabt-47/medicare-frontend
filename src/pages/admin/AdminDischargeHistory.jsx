@@ -13,6 +13,7 @@ import SearchBar from "../../components/SearchBar";
 import FilterBar from "../../components/FilterBar";
 import Pagination from "../../components/Pagination";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
 
 const SORT_OPTIONS = [
   { value: "desc", label: "Newest First" },
@@ -59,7 +60,7 @@ export default function AdminDischargeHistory() {
     if (dateTo) params.date_to = dateTo;
 
     api
-      .get("/admin/discharge-history", { params })
+      .get(API_ROUTES.admin.dischargeHistory, { params })
       .then((r) => {
         if (!active) return;
         setItems(r.data.items || []);
@@ -81,7 +82,7 @@ export default function AdminDischargeHistory() {
     if (!confirmDeleteId) return;
     setDeletingId(confirmDeleteId);
     try {
-      await api.delete(`/api/discharge/${confirmDeleteId}`);
+      await api.delete(API_ROUTES.discharge.remove(confirmDeleteId));
 
       setItems((prev) =>
         prev.filter((item) => item.discharge_id !== confirmDeleteId),
