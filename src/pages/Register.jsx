@@ -18,6 +18,7 @@ import { PasswordStrengthField } from "../components/PasswordStrengthField";
 import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { API_ROUTES } from "../lib/routes";
 
 const FEATURES = [
   { icon: Heart, text: "All your health records in one place" },
@@ -247,7 +248,7 @@ export default function Register({ togglePage }) {
                 onSubmit={async (values, { setSubmitting }) => {
                   setRegError("");
                   try {
-                    const response = await api.post("/register", {
+                    const response = await api.post(API_ROUTES.auth.register, {
                       full_name: values.full_name,
                       email: values.email,
                       dob: values.dob,

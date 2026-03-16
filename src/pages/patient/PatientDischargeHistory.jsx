@@ -11,6 +11,7 @@ import PatientLayout from "../../components/patient/PatientLayout";
 import FilterBar from "../../components/FilterBar";
 import Pagination from "../../components/Pagination";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
 
 const SORT_OPTIONS = [
   { value: "desc", label: "Newest First" },
@@ -46,7 +47,7 @@ export default function PatientDischargeHistory() {
     let active = true;
     setLoading(true);
     api
-      .get("/patient/discharge-history", {
+      .get(API_ROUTES.patient.dischargeHistory, {
         params: { page, size: PAGE_SIZE, sort },
       })
       .then((r) => {

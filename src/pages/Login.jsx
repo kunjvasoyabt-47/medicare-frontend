@@ -12,6 +12,7 @@ import {
 import { loginSchema } from "../lib/validation";
 import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
+import { API_ROUTES } from "../lib/routes";
 
 export default function Login({ togglePage }) {
   const navigate = useNavigate();
@@ -28,7 +29,7 @@ export default function Login({ togglePage }) {
   const handleLogin = async (values, { setSubmitting }) => {
     setError("");
     try {
-      const response = await api.post("/login", values);
+      const response = await api.post(API_ROUTES.auth.login, values);
       localStorage.setItem("refresh_token", response.data.refresh_token);
       await checkAuth();
       if (response.data.is_admin) navigate("/admin/dashboard");

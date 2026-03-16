@@ -18,6 +18,8 @@ import {
 import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
 import { profileUpdateSchema } from "../../lib/validation";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 const GENDER_OPTIONS = ["Male", "Female", "Other", "Prefer not to say"];
 
@@ -105,7 +107,7 @@ export default function PatientProfile() {
 
   useEffect(() => {
     api
-      .get("/patient/profile")
+      .get(API_ROUTES.patient.profile)
       .then((r) => {
         setProfile(r.data);
         setForm({
@@ -157,7 +159,7 @@ export default function PatientProfile() {
       if (form.address !== (profile.address || ""))
         payload.address = form.address || null;
 
-      const r = await api.patch("/patient/profile", payload);
+      const r = await api.patch(API_ROUTES.patient.profile, payload);
       setProfile((prev) => ({ ...prev, ...r.data }));
       setIsEditing(false);
       showToast("Profile updated successfully!");
@@ -185,9 +187,7 @@ export default function PatientProfile() {
   if (loading) {
     return (
       <PatientLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 size={36} className="animate-spin text-slate-300" />
-        </div>
+        <SystemLoader label="Loading Profile" sublabel="Retrieving your personal details" />
       </PatientLayout>
     );
   }

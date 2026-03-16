@@ -6,7 +6,6 @@ import {
   UserCheck,
   ClipboardList,
   ChevronRight,
-  Loader2,
   Calendar,
   FlaskConical,
   Receipt,
@@ -14,6 +13,8 @@ import {
 } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }) {
   return (
@@ -52,7 +53,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     api
-      .get("/admin/dashboard")
+      .get(API_ROUTES.admin.dashboard)
       .then((r) => setStats(r.data))
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -61,9 +62,7 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 size={36} className="animate-spin text-slate-300" />
-        </div>
+        <SystemLoader label="Loading Dashboard" sublabel="Collecting discharge analytics" />
       </AdminLayout>
     );
   }

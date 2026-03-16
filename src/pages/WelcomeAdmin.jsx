@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../lib/axios';
+import { API_ROUTES } from '../lib/routes';
 import {
   LogOut, ShieldCheck, Search, ArrowUpDown,
   ChevronLeft, ChevronRight, Eye
@@ -34,7 +35,7 @@ export default function WelcomeAdmin() {
     const fetchPatients = async () => {
       setLoading(true);
       try {
-        const response = await api.get('/admin/patients', {
+        const response = await api.get(API_ROUTES.admin.patients, {
           params: { search: searchTerm, page: currentPage, size: itemsPerPage, sort: sortOrder }
         });
         setPatients(response.data.items || []);

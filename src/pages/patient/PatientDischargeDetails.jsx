@@ -7,13 +7,14 @@ import {
   Pill,
   FileText,
   ExternalLink,
-  Loader2,
   Calendar,
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 function SectionHeader({ icon: Icon, title, count, colorClass, bgClass }) {
   return (
@@ -117,13 +118,13 @@ function PatientDischargeDetails() {
 
   useEffect(() => {
     api
-      .get(`/patient/discharge/${id}/documents`)
+      .get(API_ROUTES.patient.dischargeDocuments(id))
       .then((r) => {
         setData(r.data);
 
         // Now fetch the PDF URLs
         api
-          .get(`/patient/discharge/${id}/pdfs`)
+          .get(API_ROUTES.patient.dischargePdfs(id))
           .then((pdfResponse) => {
             // Merge the new document URLs with existing data
             setData((prevData) => ({
@@ -148,9 +149,7 @@ function PatientDischargeDetails() {
   if (loading) {
     return (
       <PatientLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 size={36} className="animate-spin text-slate-300" />
-        </div>
+        <SystemLoader label="Loading Discharge Details" sublabel="Gathering your document timeline" />
       </PatientLayout>
     );
   }

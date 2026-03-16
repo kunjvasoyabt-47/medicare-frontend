@@ -7,13 +7,14 @@ import {
   Pill,
   FileText,
   ExternalLink,
-  Loader2,
   Calendar,
   Mail,
   AlertCircle,
 } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import api from "../../lib/axios";
+import { API_ROUTES } from "../../lib/routes";
+import SystemLoader from "../../components/SystemLoader";
 
 function SectionHeader({ icon: Icon, title, count, colorClass, bgClass }) {
   return (
@@ -117,14 +118,14 @@ export default function AdminDischargeDetails() {
 
   useEffect(() => {
     api
-      .get(`/admin/discharge/${id}/documents`)
+      .get(API_ROUTES.admin.dischargeDocuments(id))
       .then((r) => {
         console.log("Discharge documents:", r.data);
         setData(r.data);
 
         // Now fetch the PDF URLs
         api
-          .get(`/admin/discharge/${id}/pdfs`)
+          .get(API_ROUTES.admin.dischargePdfs(id))
           .then((pdfResponse) => {
             console.log("PDF documents fetched:", pdfResponse.data);
             // Merge the PDF URLs with existing data
@@ -150,9 +151,7 @@ export default function AdminDischargeDetails() {
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 size={36} className="animate-spin text-slate-300" />
-        </div>
+        <SystemLoader label="Loading Discharge Details" sublabel="Fetching reports, bills, and prescriptions" />
       </AdminLayout>
     );
   }
