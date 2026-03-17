@@ -83,16 +83,11 @@ export default function AdminDischargeHistory() {
     setDeletingId(confirmDeleteId);
     try {
       await api.delete(API_ROUTES.discharge.remove(confirmDeleteId));
-
       setItems((prev) =>
         prev.filter((item) => item.discharge_id !== confirmDeleteId),
       );
       setTotal((prev) => Math.max(0, prev - 1));
-
-      if (items.length === 1 && page > 1) {
-        updateParams({ page: page - 1 });
-      }
-
+      if (items.length === 1 && page > 1) updateParams({ page: page - 1 });
       showToast("Discharge history deleted successfully.", "success");
     } catch (err) {
       const detail = err?.response?.data?.detail;
@@ -119,38 +114,51 @@ export default function AdminDischargeHistory() {
           </p>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col lg:flex-row gap-3 mb-5">
-          <SearchBar
-            value={search}
-            onChange={(v) => updateParams({ search: v, page: 1 })}
-            placeholder="Search by patient name or email…"
-            className="flex-1"
-          />
-          <FilterBar
-            filters={[
-              {
-                key: "sort",
-                label: "Sort",
-                type: "select",
-                value: sort,
-                options: SORT_OPTIONS,
-              },
-              {
-                key: "date_from",
-                label: "From",
-                type: "date",
-                value: dateFrom,
-              },
-              {
-                key: "date_to",
-                label: "To",
-                type: "date",
-                value: dateTo,
-              },
-            ]}
-            onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
-          />
+        {/* ── Unified Toolbar ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 mb-5">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end sm:flex-wrap">
+            {/* Search takes available space */}
+            <div className="flex-1 min-w-0">
+              <label className="mb-1 block text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none">
+                Search
+              </label>
+              <SearchBar
+                value={search}
+                onChange={(v) => updateParams({ search: v, page: 1 })}
+                placeholder="Search by patient name or email…"
+                debounceMs={400}
+              />
+            </div>
+
+            {/* Divider (desktop only) */}
+            <div className="hidden sm:block w-px self-stretch bg-slate-100 my-0.5" />
+
+            {/* Filters */}
+            <FilterBar
+              filters={[
+                {
+                  key: "sort",
+                  label: "Sort",
+                  type: "select",
+                  value: sort,
+                  options: SORT_OPTIONS,
+                },
+                {
+                  key: "date_from",
+                  label: "From",
+                  type: "date",
+                  value: dateFrom,
+                },
+                {
+                  key: "date_to",
+                  label: "To",
+                  type: "date",
+                  value: dateTo,
+                },
+              ]}
+              onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
+            />
+          </div>
         </div>
 
         {/* Table */}
@@ -280,6 +288,7 @@ export default function AdminDischargeHistory() {
           </div>
         </div>
 
+        {/* Delete Confirm Modal */}
         {confirmDeleteId && (
           <div className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-[1px] flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 p-5">
@@ -325,6 +334,7 @@ export default function AdminDischargeHistory() {
           </div>
         )}
 
+        {/* Toast */}
         {toast.message && (
           <div
             className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-lg border text-[13px] font-semibold ${
