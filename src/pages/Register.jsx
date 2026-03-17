@@ -183,8 +183,7 @@ export default function Register({ togglePage }) {
             <div className="w-10 h-0.5 bg-white opacity-15 mb-4" />
             <h1 className="text-white text-4xl font-black leading-tight tracking-tight mt-5 mb-3 r-heading">
               Better health
-              <br />
-              <span>starts here.</span>
+              <span>starts here</span>
             </h1>
             <p className="text-white/45 text-sm leading-relaxed max-w-xs mb-8">
               Create your free account and take control of your healthcare
@@ -332,7 +331,7 @@ export default function Register({ togglePage }) {
                       </div>
 
                       <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5  tracking-wider">Email Address</label>
+                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Email Address</label>
                         <input
                           name="email"
                           type="email"
@@ -446,7 +445,7 @@ export default function Register({ togglePage }) {
                             <img
                               src={`https://flagcdn.com/w40/${selectedCountry.iso.toLowerCase()}.png`}
                               alt={`${selectedCountry.country} flag`}
-                              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-3.5 rounded-sm object-cover border border-slate-200"
+                              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-3 rounded-sm object-cover border border-slate-200"
                               loading="lazy"
                             />
                           )}
@@ -454,7 +453,7 @@ export default function Register({ togglePage }) {
                             type="text"
                             name="country_code"
                             placeholder="Search or type +91"
-                            className={`w-full pl-12 pr-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
+                            className={`w-full pl-9 pr-3 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm placeholder:text-xs text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
                               ? "border-red-300 bg-red-50"
                               : !errors.country_code && values.country_code
                                 ? "border-emerald-400 bg-emerald-50"
