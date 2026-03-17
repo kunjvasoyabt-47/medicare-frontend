@@ -74,7 +74,16 @@ export const registerSchema = Yup.object().shape({
     .matches(/^\+\d{1,3}$/, "Invalid country code format"),
   phone_number: Yup.string()
     .required("Phone number is required")
-    .matches(/^\d{7,15}$/, "Phone number must be 7-15 digits"),
+    .matches(/^[0-9-]+$/, "Only numbers and - are allowed")
+    .test(
+      "phone-digits-length",
+      "Phone number must be 7-15 digits",
+      (value) => {
+        if (!value) return true;
+        const digitsOnly = value.replace(/-/g, "");
+        return /^\d{7,15}$/.test(digitsOnly);
+      },
+    ),
   password: Yup.string()
     .min(8, "Min 8 characters")
     .matches(passwordRegex, "Need: 1 Upper, 1 Lower, 1 Num, 1 Special")

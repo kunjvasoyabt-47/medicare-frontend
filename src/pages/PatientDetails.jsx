@@ -352,6 +352,7 @@ export default function PatientDetails() {
   const isFailed = processState === "failed";
   const isIdle = processState === "idle";
   const anyFiles = files.reports.length + files.bills.length + files.prescriptions.length > 0;
+  const isDocumentProcessingCompleted = isCompleted || Boolean(data?.discharge_date);
 
   const selectedCounts = { reports: files.reports.length, bills: files.bills.length, prescriptions: files.prescriptions.length };
   const missingTypes = [
@@ -519,25 +520,7 @@ export default function PatientDetails() {
                         {isCompleted ? "Submitted Documents" : "Attach Documents"}
                       </p>
 
-                      {/*
-                        ─────────────────────────────────────────────────────
-                        BUG FIX: The "View Uploaded" dropdowns now ONLY appear
-                        after processState === "completed" (isCompleted).
-
-                        Previously the condition was:
-                          (apiSucceeded && !isFailed)
-                        which evaluated to true the moment the upload API call
-                        returned a discharge_id — i.e. immediately at the START
-                        of processing — causing the dropdowns to show during
-                        the "Processing..." state.
-
-                        The fix removes that middle branch entirely.
-                        During processing the user sees the normal DropZones
-                        (locked/dimmed). Only on completion do we swap to
-                        CompletedDocumentsSection which fetches and shows the
-                        processed docs with Open buttons for reports & bills.
-                        ─────────────────────────────────────────────────────
-                      */}
+                    
                       {isCompleted ? (
                         <CompletedDocumentsSection patientId={id} data={data} dischargeId={dischargeId} />
                       ) : (
@@ -781,6 +764,12 @@ export default function PatientDetails() {
 
                     <div className="lg:col-span-2 flex flex-col gap-5">
                       <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">Generate Documents</p>
+                      {!isDocumentProcessingCompleted && (
+                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                          <AlertCircle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+                          <p className="text-amber-700 text-[13px] font-semibold">Complete Process All Documents first to enable patient-friendly and insurance-ready generation.</p>
+                        </div>
+                      )}
                       <div className="rounded-2xl bg-white border border-slate-200 p-4">
                         <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3">Document Status</p>
                         <div className="flex flex-col gap-3">
@@ -804,10 +793,10 @@ export default function PatientDetails() {
                         </div>
                       </div>
                       <div className="flex flex-col gap-3 mt-auto">
-                        <button onClick={handleGeneratePatientFriendly} disabled={isGeneratingPatientDoc || isGeneratingInsuranceDoc} className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        <button onClick={handleGeneratePatientFriendly} disabled={!isDocumentProcessingCompleted || isGeneratingPatientDoc || isGeneratingInsuranceDoc} className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                           {isGeneratingPatientDoc ? <><Loader2 size={15} className="animate-spin" />Generating...</> : <><FileText size={15} />{patientFriendlyUrl ? "Regenerate" : "Generate"} Patient-Friendly</>}
                         </button>
-                        <button onClick={handleGenerateInsuranceReady} disabled={isGeneratingPatientDoc || isGeneratingInsuranceDoc} className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                        <button onClick={handleGenerateInsuranceReady} disabled={!isDocumentProcessingCompleted || isGeneratingPatientDoc || isGeneratingInsuranceDoc} className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed">
                           {isGeneratingInsuranceDoc ? <><Loader2 size={15} className="animate-spin" />Generating...</> : <><Receipt size={15} />Generate Insurance-Ready Doc</>}
                         </button>
                       </div>
