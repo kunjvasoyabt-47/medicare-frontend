@@ -66,6 +66,16 @@
     color: transparent;
   }
 
+  .r-heading {
+    line-height: 1.22;
+  }
+
+  .r-heading span {
+    display: block;
+    margin-top: 0.1em;
+    line-height: 1.2;
+  }
+
   /* Spinner Animation */
   .spinner {
     width: 16px;
