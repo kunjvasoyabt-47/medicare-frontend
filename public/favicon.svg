@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Medicare activity icon">
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <path
+    d="M8 34h11l8-20 10 36 8-20h11"
+    fill="none"
+    stroke="#0f172a"
+    stroke-width="5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

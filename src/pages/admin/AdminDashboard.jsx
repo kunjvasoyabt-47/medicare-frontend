@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -7,9 +7,6 @@ import {
   ClipboardList,
   ChevronRight,
   Calendar,
-  FlaskConical,
-  Receipt,
-  Pill,
 } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import api from "../../lib/axios";

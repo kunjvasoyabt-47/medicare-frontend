@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from "react";
+import  { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, Users, Loader2 } from "lucide-react";
+import { Eye, Users } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import SearchBar from "../../components/SearchBar";
 import FilterBar from "../../components/FilterBar";

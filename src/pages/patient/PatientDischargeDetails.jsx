@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import {useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,7 +9,7 @@ import {
   ExternalLink,
   Calendar,
   AlertCircle,
-  CheckCircle,
+
 } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
