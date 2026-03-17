@@ -27,36 +27,36 @@ const FEATURES = [
 ];
 
 const COUNTRY_CODES = [
-  { code: "+91", country: "India" },
-  { code: "+1", country: "USA" },
-  { code: "+44", country: "UK" },
-  { code: "+61", country: "Australia" },
-  { code: "+81", country: "Japan" },
-  { code: "+86", country: "China" },
-  { code: "+33", country: "France" },
-  { code: "+49", country: "Germany" },
-  { code: "+39", country: "Italy" },
-  { code: "+34", country: "Spain" },
-  { code: "+31", country: "Netherlands" },
-  { code: "+32", country: "Belgium" },
-  { code: "+41", country: "Switzerland" },
-  { code: "+43", country: "Austria" },
-  { code: "+45", country: "Denmark" },
-  { code: "+46", country: "Sweden" },
-  { code: "+47", country: "Norway" },
-  { code: "+48", country: "Poland" },
-  { code: "+55", country: "Brazil" },
-  { code: "+56", country: "Chile" },
-  { code: "+57", country: "Colombia" },
-  { code: "+60", country: "Malaysia" },
-  { code: "+62", country: "Indonesia" },
-  { code: "+63", country: "Philippines" },
-  { code: "+64", country: "New Zealand" },
-  { code: "+65", country: "Singapore" },
-  { code: "+66", country: "Thailand" },
-  { code: "+82", country: "South Korea" },
-  { code: "+84", country: "Vietnam" },
-  { code: "+90", country: "Turkey" },
+  { code: "+91", country: "India", iso: "IN" },
+  { code: "+1", country: "USA", iso: "US" },
+  { code: "+44", country: "UK", iso: "GB" },
+  { code: "+61", country: "Australia", iso: "AU" },
+  { code: "+81", country: "Japan", iso: "JP" },
+  { code: "+86", country: "China", iso: "CN" },
+  { code: "+33", country: "France", iso: "FR" },
+  { code: "+49", country: "Germany", iso: "DE" },
+  { code: "+39", country: "Italy", iso: "IT" },
+  { code: "+34", country: "Spain", iso: "ES" },
+  { code: "+31", country: "Netherlands", iso: "NL" },
+  { code: "+32", country: "Belgium", iso: "BE" },
+  { code: "+41", country: "Switzerland", iso: "CH" },
+  { code: "+43", country: "Austria", iso: "AT" },
+  { code: "+45", country: "Denmark", iso: "DK" },
+  { code: "+46", country: "Sweden", iso: "SE" },
+  { code: "+47", country: "Norway", iso: "NO" },
+  { code: "+48", country: "Poland", iso: "PL" },
+  { code: "+55", country: "Brazil", iso: "BR" },
+  { code: "+56", country: "Chile", iso: "CL" },
+  { code: "+57", country: "Colombia", iso: "CO" },
+  { code: "+60", country: "Malaysia", iso: "MY" },
+  { code: "+62", country: "Indonesia", iso: "ID" },
+  { code: "+63", country: "Philippines", iso: "PH" },
+  { code: "+64", country: "New Zealand", iso: "NZ" },
+  { code: "+65", country: "Singapore", iso: "SG" },
+  { code: "+66", country: "Thailand", iso: "TH" },
+  { code: "+82", country: "South Korea", iso: "KR" },
+  { code: "+84", country: "Vietnam", iso: "VN" },
+  { code: "+90", country: "Turkey", iso: "TR" },
 ];
 
 export default function Register({ togglePage }) {
@@ -283,7 +283,20 @@ export default function Register({ togglePage }) {
                   setFieldValue,
                   setFieldTouched,
                   validateField,
-                }) => (
+                }) => {
+                  const selectedCountry = COUNTRY_CODES.find(
+                    (item) => item.code === values.country_code,
+                  );
+                  const phoneHasInvalidChars = /[^0-9-]/.test(
+                    values.phone_number || "",
+                  );
+                  const showPhoneError = Boolean(
+                    errors.phone_number &&
+                    touched.phone_number &&
+                    (focusedField !== "phone_number" || phoneHasInvalidChars),
+                  );
+
+                  return (
                   <Form>
                     {/* Row 1 */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 sm:gap-3">
@@ -319,7 +332,7 @@ export default function Register({ togglePage }) {
                       </div>
 
                       <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Email Address</label>
+                        <label className="block text-xs font-black text-slate-600 mb-1.5  tracking-wider">Email Address</label>
                         <input
                           name="email"
                           type="email"
@@ -428,34 +441,44 @@ export default function Register({ togglePage }) {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-3">
                       <div className="mb-2.5 relative">
                         <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Country Code</label>
-                        <input
-                          type="text"
-                          name="country_code"
-                          placeholder="Search or type +91"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
-                            ? "border-red-300 bg-red-50"
-                            : !errors.country_code && values.country_code
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
-                          value={values.country_code}
-                          onChange={(e) => handleCountryCodeChange(e.target.value, setFieldValue)}
-                          onFocus={() => {
-                            setFocusedField("country_code");
-                            if (values.country_code) {
-                              const filtered = COUNTRY_CODES.filter(
-                                (item) =>
-                                  item.code.toLowerCase().includes(values.country_code.toLowerCase()) ||
-                                  item.country.toLowerCase().includes(values.country_code.toLowerCase())
-                              );
-                              setCountryCodeSuggestions(filtered);
-                              setShowCountrySuggestions(true);
-                            }
-                          }}
-                          onBlur={(e) => {
-                            handleCountryCodeBlur(values.country_code, setFieldValue, setFieldTouched, validateField);
-                          }}
-                        />
+                        <div className="relative">
+                          {selectedCountry?.iso && (
+                            <img
+                              src={`https://flagcdn.com/w40/${selectedCountry.iso.toLowerCase()}.png`}
+                              alt={`${selectedCountry.country} flag`}
+                              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-3.5 rounded-sm object-cover border border-slate-200"
+                              loading="lazy"
+                            />
+                          )}
+                          <input
+                            type="text"
+                            name="country_code"
+                            placeholder="Search or type +91"
+                            className={`w-full pl-12 pr-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
+                              ? "border-red-300 bg-red-50"
+                              : !errors.country_code && values.country_code
+                                ? "border-emerald-400 bg-emerald-50"
+                                : "border-slate-200 focus:border-slate-900 focus:bg-white"
+                              }`}
+                            value={values.country_code}
+                            onChange={(e) => handleCountryCodeChange(e.target.value, setFieldValue)}
+                            onFocus={() => {
+                              setFocusedField("country_code");
+                              if (values.country_code) {
+                                const filtered = COUNTRY_CODES.filter(
+                                  (item) =>
+                                    item.code.toLowerCase().includes(values.country_code.toLowerCase()) ||
+                                    item.country.toLowerCase().includes(values.country_code.toLowerCase())
+                                );
+                                setCountryCodeSuggestions(filtered);
+                                setShowCountrySuggestions(true);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              handleCountryCodeBlur(values.country_code, setFieldValue, setFieldTouched, validateField);
+                            }}
+                          />
+                        </div>
 
                         {/* Suggestions Dropdown */}
                         {showCountrySuggestions && countryCodeSuggestions.length > 0 && (
@@ -470,7 +493,15 @@ export default function Register({ togglePage }) {
                                 }}
                                 className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center justify-between"
                               >
-                                <span className="font-semibold text-slate-900">{item.code}</span>
+                                <div className="flex items-center gap-2">
+                                  <img
+                                    src={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png`}
+                                    alt={`${item.country} flag`}
+                                    className="w-5 h-3.5 rounded-sm object-cover border border-slate-200"
+                                    loading="lazy"
+                                  />
+                                  <span className="font-semibold text-slate-900">{item.code}</span>
+                                </div>
                                 <span className="text-xs text-slate-500">{item.country}</span>
                               </button>
                             ))}
@@ -494,23 +525,25 @@ export default function Register({ togglePage }) {
                           name="phone_number"
                           type="tel"
                           placeholder="9876543210"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.phone_number && touched.phone_number && focusedField !== "phone_number"
+                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${showPhoneError
                             ? "border-red-300 bg-red-50"
                             : !errors.phone_number && values.phone_number
                               ? "border-emerald-400 bg-emerald-50"
                               : "border-slate-200 focus:border-slate-900 focus:bg-white"
                             }`}
                           value={values.phone_number}
-                          onChange={handleChange}
+                          onChange={(e) => {
+                            setFieldValue("phone_number", e.target.value);
+                            setFieldTouched("phone_number", true, false);
+                            validateField("phone_number");
+                          }}
                           onFocus={() => setFocusedField("phone_number")}
                           onBlur={(e) => {
                             setFocusedField("");
                             handleBlur(e);
                           }}
                         />
-                        {errors.phone_number &&
-                          touched.phone_number &&
-                          focusedField !== "phone_number" ? (
+                        {showPhoneError ? (
                           <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
                             <XCircle size={11} /> {errors.phone_number}
                           </p>
@@ -615,7 +648,8 @@ export default function Register({ togglePage }) {
                       </button>
                     </p>
                   </Form>
-                )}
+                  );
+                }}
               </Formik>
             </div>
           </div>
