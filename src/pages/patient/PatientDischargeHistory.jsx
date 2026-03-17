@@ -78,20 +78,22 @@ export default function PatientDischargeHistory() {
           </p>
         </div>
 
-        {/* Filter toolbar */}
-        <div className="flex justify-end mb-5">
-          <FilterBar
-            filters={[
-              {
-                key: "sort",
-                label: "Sort",
-                type: "select",
-                value: sort,
-                options: SORT_OPTIONS,
-              },
-            ]}
-            onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
-          />
+        {/* ── Unified Toolbar (sort only for patient) ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 mb-5">
+          <div className="flex items-end justify-end">
+            <FilterBar
+              filters={[
+                {
+                  key: "sort",
+                  label: "Sort",
+                  type: "select",
+                  value: sort,
+                  options: SORT_OPTIONS,
+                },
+              ]}
+              onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
+            />
+          </div>
         </div>
 
         {/* List */}
@@ -126,7 +128,6 @@ export default function PatientDischargeHistory() {
                   >
                     <div className="flex items-center justify-between gap-4 flex-wrap">
                       <div className="flex items-center gap-4 min-w-0">
-                        {/* Index badge */}
                         <div className="w-10 h-10 rounded-2xl bg-[#0f172a] text-white flex items-center justify-center font-black text-[13px] shrink-0 shadow-sm">
                           {String(
                             total - (page - 1) * PAGE_SIZE - index,

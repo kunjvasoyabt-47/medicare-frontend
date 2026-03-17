@@ -71,7 +71,6 @@ export default function AdminPatients() {
           return;
         }
 
-        // Fallback for non-paginated payloads: paginate on client.
         const start = (page - 1) * PAGE_SIZE;
         const end = start + PAGE_SIZE;
         setPatients(list.slice(start, end));
@@ -118,26 +117,36 @@ export default function AdminPatients() {
           </p>
         </div>
 
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <SearchBar
-            value={search}
-            onChange={(v) => updateParams({ search: v, page: 1 })}
-            placeholder="Search by name or email…"
-            className="flex-1"
-          />
-          <FilterBar
-            filters={[
-              {
-                key: "sort",
-                label: "Sort",
-                type: "select",
-                value: sort,
-                options: SORT_OPTIONS,
-              },
-            ]}
-            onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
-          />
+        {/* ── Unified Toolbar ── */}
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 mb-5">
+          <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end">
+            <div className="flex-1 min-w-0">
+              <label className="mb-1 block text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none">
+                Search
+              </label>
+              <SearchBar
+                value={search}
+                onChange={(v) => updateParams({ search: v, page: 1 })}
+                placeholder="Search by name or email…"
+                debounceMs={400}
+              />
+            </div>
+
+            <div className="hidden sm:block w-px self-stretch bg-slate-100 my-0.5" />
+
+            <FilterBar
+              filters={[
+                {
+                  key: "sort",
+                  label: "Sort",
+                  type: "select",
+                  value: sort,
+                  options: SORT_OPTIONS,
+                },
+              ]}
+              onFilterChange={(k, v) => updateParams({ [k]: v, page: 1 })}
+            />
+          </div>
         </div>
 
         {/* Table */}
