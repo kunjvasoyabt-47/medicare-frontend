@@ -13,7 +13,7 @@ const SITE_URL = normalizeUrl(
     (typeof window !== "undefined" ? window.location.origin : FALLBACK_ORIGIN),
 );
 const SITE_NAME = "Medicare";
-const DEFAULT_IMAGE = "/og-preview-v2.png";
+const DEFAULT_IMAGE = "/og-preview.png";
 
 const routeMeta = [
   {
