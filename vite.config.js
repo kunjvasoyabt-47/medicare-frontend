@@ -10,5 +10,13 @@ export default defineConfig({
   server: {
     port: 3000, // Forces Vite to run on port 3000
     strictPort: true, // If 3000 is busy, it won't automatically switch to 3001
+    proxy: {
+      '/api': {
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   }
 })

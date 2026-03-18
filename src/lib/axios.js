@@ -1,9 +1,11 @@
 import axios from 'axios';
 import { API_ROUTES } from './routes';
 
+const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
+const baseURL = import.meta.env.PROD ? '/api' : (configuredBaseUrl || '/api');
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL , // Use environment variable or fallback to localhost
+  baseURL,
   withCredentials: true, // MANDATORY: Allows the browser to send/receive HttpOnly cookies
   headers: {
     'Content-Type': 'application/json',

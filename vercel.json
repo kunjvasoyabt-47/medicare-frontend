@@ -1,5 +1,9 @@
 {
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://fastapi-post-discharge-system-backe.vercel.app/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
