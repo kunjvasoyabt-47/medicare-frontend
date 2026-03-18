@@ -1,36 +1,44 @@
 import axios from 'axios';
 import { API_ROUTES } from './routes';
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+  saveTokensFromPayload,
+} from './tokenStorage';
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const baseURL = import.meta.env.PROD ? '/api' : (configuredBaseUrl || '/api');
-const getStoredRefreshToken = () => {
-  if (typeof window === 'undefined') return null;
-
-  const token = localStorage.getItem('refresh_token');
-  if (!token || token === 'undefined' || token === 'null' || token.trim() === '') {
-    return null;
-  }
-
-  return token;
-};
 
 const api = axios.create({
   baseURL,
-  withCredentials: true, // MANDATORY: Allows the browser to send/receive HttpOnly cookies
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+api.interceptors.request.use((config) => {
+  const token = getAccessToken();
+
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
+});
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config || {};
 
     // Prevents interceptor from reloading the page when a user types a wrong password or fails registration
     if ((originalRequest.url?.includes(API_ROUTES.auth.login) || originalRequest.url?.includes(API_ROUTES.auth.register)) && originalRequest.method === 'post') {
         return Promise.reject(error);
     }
+
+    const isRefreshRequest = originalRequest.url?.includes(API_ROUTES.auth.refresh);
 
     const errorMessage = error.response?.data?.detail || "";
 
@@ -42,7 +50,7 @@ api.interceptors.response.use(
       console.warn("Session revoked by another device. Logging out.");
       
       if (typeof window !== 'undefined') {
-          localStorage.removeItem('refresh_token');
+          clearAuthTokens();
           // SAFETY CHECK: Only redirect if NOT already on a public page
           if (!isPublicPage) {
               window.location.href = API_ROUTES.auth.login;
@@ -52,24 +60,31 @@ api.interceptors.response.use(
     }
 
     // General token expiration handling
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
       originalRequest._retry = true;
 
-      const refreshToken = getStoredRefreshToken();
+      const refreshToken = getRefreshToken();
 
       if (refreshToken) {
         try {
-          await api.post(
+          const refreshRes = await api.post(
             API_ROUTES.auth.refresh,
-            { refresh_token: refreshToken },
-            { withCredentials: true }
+            { refresh_token: refreshToken }
           );
+
+          saveTokensFromPayload(refreshRes?.data);
+
+          const latestAccessToken = getAccessToken();
+          if (latestAccessToken) {
+            originalRequest.headers = originalRequest.headers || {};
+            originalRequest.headers.Authorization = `Bearer ${latestAccessToken}`;
+          }
 
           // Retry original request
           return api(originalRequest);
         } catch (refreshError) {
           if (typeof window !== 'undefined') {
-              localStorage.removeItem('refresh_token');
+              clearAuthTokens();
               //Only redirect if NOT already on a public page
               if (!isPublicPage) {
                   window.location.href = API_ROUTES.auth.login;
@@ -80,6 +95,7 @@ api.interceptors.response.use(
       } else {
         // If there is no refresh token, they aren't on a public page, send them to login
         if (typeof window !== 'undefined' && !isPublicPage) {
+            clearAuthTokens();
             window.location.href = API_ROUTES.auth.login;
         }
         return Promise.reject(error);

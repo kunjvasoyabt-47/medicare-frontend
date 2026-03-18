@@ -19,6 +19,7 @@ import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_ROUTES } from "../lib/routes";
+import { saveTokensFromPayload } from "../lib/tokenStorage";
 
 const FEATURES = [
   { icon: Heart, text: "All your health records in one place" },
@@ -295,17 +296,32 @@ export default function Register({ togglePage }) {
                     phone_number: values.phone_number,
                     password: values.password,
                   });
-                  localStorage.setItem(
-                    "refresh_token",
-                    response.data.refresh_token,
-                  );
-                  await checkAuth();
-                  navigate("/welcome-patient");
+                  const tokensStored = saveTokensFromPayload(response?.data);
+                  if (!tokensStored) {
+                    throw new Error("TOKENS_NOT_PROVIDED");
+                  }
+
+                  const authUser = await checkAuth();
+                  if (!authUser) {
+                    throw new Error("SESSION_NOT_ESTABLISHED");
+                  }
+
+                  navigate(authUser.is_admin ? "/welcome-admin" : "/welcome-patient");
                 } catch (err) {
-                  setRegError(
-                    err.response?.data?.detail ||
-                      "Registration failed. Please try again.",
-                  );
+                  if (err.message === "TOKENS_NOT_PROVIDED") {
+                    setRegError(
+                      "Registration succeeded but tokens were not returned by backend.",
+                    );
+                  } else if (err.message === "SESSION_NOT_ESTABLISHED") {
+                    setRegError(
+                      "Tokens were stored, but user verification failed. Please check backend /auth/me for Bearer token auth.",
+                    );
+                  } else {
+                    setRegError(
+                      err.response?.data?.detail ||
+                        "Registration failed. Please try again.",
+                    );
+                  }
                 } finally {
                   setSubmitting(false);
                 }

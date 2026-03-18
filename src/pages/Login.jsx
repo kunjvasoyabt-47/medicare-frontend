@@ -6,6 +6,7 @@ import { loginSchema } from "../lib/validation";
 import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
 import { API_ROUTES } from "../lib/routes";
+import { saveTokensFromPayload } from "../lib/tokenStorage";
 
 export default function Login({ togglePage }) {
   const navigate = useNavigate();
@@ -23,16 +24,9 @@ export default function Login({ togglePage }) {
     setError("");
     try {
       const response = await api.post(API_ROUTES.auth.login, values);
-      const refreshToken = response?.data?.refresh_token;
-      if (
-        typeof refreshToken === "string" &&
-        refreshToken.trim() !== "" &&
-        refreshToken !== "undefined" &&
-        refreshToken !== "null"
-      ) {
-        localStorage.setItem("refresh_token", refreshToken);
-      } else {
-        localStorage.removeItem("refresh_token");
+      const tokensStored = saveTokensFromPayload(response?.data);
+      if (!tokensStored) {
+        throw new Error("TOKENS_NOT_PROVIDED");
       }
 
       const authUser = await checkAuth();
@@ -43,9 +37,13 @@ export default function Login({ togglePage }) {
       if (authUser.is_admin) navigate("/admin/dashboard");
       else navigate("/patient/dashboard");
     } catch (err) {
-      if (err.message === "SESSION_NOT_ESTABLISHED") {
+      if (err.message === "TOKENS_NOT_PROVIDED") {
         setError(
-          "Login was accepted, but a secure session could not be established in this browser context. Please verify backend cookie settings (Domain, SameSite, Secure).",
+          "Login response did not include access_token or refresh_token.",
+        );
+      } else if (err.message === "SESSION_NOT_ESTABLISHED") {
+        setError(
+          "Tokens were stored, but user verification failed. Please check backend /auth/me for Bearer token auth.",
         );
       } else {
         setError(

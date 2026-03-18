@@ -7,6 +7,11 @@ import {
 } from "react";
 import api from "../lib/axios";
 import { API_ROUTES } from "../lib/routes";
+import {
+  clearAuthTokens,
+  getAccessToken,
+  getRefreshToken,
+} from "../lib/tokenStorage";
 import SystemLoader from "../components/SystemLoader";
 
 const AuthContext = createContext();
@@ -38,6 +43,15 @@ export function AuthProvider({ children }) {
   }, []);
 
   const checkAuth = useCallback(async () => {
+    const hasAnyToken = Boolean(getAccessToken() || getRefreshToken());
+    if (!hasAnyToken) {
+      setUser(null);
+      setIsDischarged(false);
+      setIsDischargeStatusLoading(false);
+      setLoading(false);
+      return null;
+    }
+
     try {
       const res = await api.get(API_ROUTES.auth.me);
       setUser(res.data);
@@ -48,7 +62,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setIsDischarged(false);
       setIsDischargeStatusLoading(false);
-      localStorage.removeItem("refresh_token");
+      clearAuthTokens();
       return null;
     } finally {
       setLoading(false);
@@ -61,12 +75,14 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem("refresh_token");
-      await api.post(API_ROUTES.auth.logout, { refresh_token: token });
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        await api.post(API_ROUTES.auth.logout, { refresh_token: refreshToken });
+      }
     } catch (err) {
       console.error("Logout failed on server, cleaning up locally...", err);
     } finally {
-      localStorage.removeItem("refresh_token");
+      clearAuthTokens();
       setUser(null);
       setIsDischarged(false);
       setIsDischargeStatusLoading(false);
