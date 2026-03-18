@@ -4,6 +4,7 @@ import Register from "./pages/Register";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PatientDetails from "./pages/PatientDetails";
 import TelegramChatBot from "./components/TelegramChatBot";
+import SeoHead from "./components/SeoHead";
 
 // Admin pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -20,6 +21,8 @@ import PatientProfile from "./pages/patient/PatientProfile";
 function App() {
   return (
     <main className="min-h-screen bg-slate-50">
+      <SeoHead />
+
       <Routes>
         {/* Public routes */}
         <Route
