@@ -20,6 +20,7 @@ export const API_ROUTES = {
     dischargeHistory: "/patient/discharge-history",
     dischargeDocuments: (dischargeId) => `/patient/discharge/${dischargeId}/documents`,
     dischargePdfs: (dischargeId) => `/patient/discharge/${dischargeId}/pdfs`,
+    dischargeReportSummary: (dischargeId) => `/api/reports/discharge/${dischargeId}/summary`,
     patientFriendlyReport: (patientId) => `/api/patient-friendly-report/convert-pdf/${patientId}`,
     generateInsuranceReadyDoc: (patientId) => `/api/patient/${patientId}/generate-ird`,
   },
