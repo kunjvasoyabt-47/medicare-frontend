@@ -13,6 +13,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout";
+import ReportSummaryAccordion from "../../components/patient/ReportSummaryAccordion";
 import api from "../../lib/axios";
 import { API_ROUTES } from "../../lib/routes";
 import SystemLoader from "../../components/SystemLoader";
@@ -480,6 +481,10 @@ function PatientDischargeDetails() {
               </div>
             )}
           </div>
+        </div>
+
+        <div className="mt-4">
+          <ReportSummaryAccordion dischargeId={id} />
         </div>
 
         {/* Medications */}

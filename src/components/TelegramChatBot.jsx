@@ -10,6 +10,10 @@ export default function TelegramChatBot() {
   const messageTimeoutRef = useRef(null);
   const location = useLocation();
   const { user, isDischarged, isDischargeStatusLoading } = useAuth();
+  const isPatientDischarged =
+    typeof user?.is_discharged === "boolean"
+      ? user.is_discharged
+      : Boolean(isDischarged);
 
   const isPatientRoute = location.pathname.startsWith("/patient/");
 
@@ -35,7 +39,7 @@ export default function TelegramChatBot() {
       showBlockedMessage("Checking discharge status. Please try again.");
       return;
     }
-    if (!isDischarged) {
+    if (!isPatientDischarged) {
       showBlockedMessage(
         "You are not discharged yet. This bot is only available after discharge.",
       );
