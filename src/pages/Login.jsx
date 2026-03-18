@@ -23,15 +23,36 @@ export default function Login({ togglePage }) {
     setError("");
     try {
       const response = await api.post(API_ROUTES.auth.login, values);
-      localStorage.setItem("refresh_token", response.data.refresh_token);
-      await checkAuth();
-      if (response.data.is_admin) navigate("/admin/dashboard");
+      const refreshToken = response?.data?.refresh_token;
+      if (
+        typeof refreshToken === "string" &&
+        refreshToken.trim() !== "" &&
+        refreshToken !== "undefined" &&
+        refreshToken !== "null"
+      ) {
+        localStorage.setItem("refresh_token", refreshToken);
+      } else {
+        localStorage.removeItem("refresh_token");
+      }
+
+      const authUser = await checkAuth();
+      if (!authUser) {
+        throw new Error("SESSION_NOT_ESTABLISHED");
+      }
+
+      if (authUser.is_admin) navigate("/admin/dashboard");
       else navigate("/patient/dashboard");
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "Incorrect email or password. Please try again.",
-      );
+      if (err.message === "SESSION_NOT_ESTABLISHED") {
+        setError(
+          "Login was accepted, but a secure session could not be established in this browser context. Please verify backend cookie settings (Domain, SameSite, Secure).",
+        );
+      } else {
+        setError(
+          err.response?.data?.detail ||
+            "Incorrect email or password. Please try again.",
+        );
+      }
     } finally {
       setSubmitting(false);
     }

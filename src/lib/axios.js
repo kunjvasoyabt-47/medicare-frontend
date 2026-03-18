@@ -3,6 +3,16 @@ import { API_ROUTES } from './routes';
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim();
 const baseURL = import.meta.env.PROD ? '/api' : (configuredBaseUrl || '/api');
+const getStoredRefreshToken = () => {
+  if (typeof window === 'undefined') return null;
+
+  const token = localStorage.getItem('refresh_token');
+  if (!token || token === 'undefined' || token === 'null' || token.trim() === '') {
+    return null;
+  }
+
+  return token;
+};
 
 const api = axios.create({
   baseURL,
@@ -45,7 +55,7 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refresh_token') : null;
+      const refreshToken = getStoredRefreshToken();
 
       if (refreshToken) {
         try {

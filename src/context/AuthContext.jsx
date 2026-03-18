@@ -42,12 +42,14 @@ export function AuthProvider({ children }) {
       const res = await api.get(API_ROUTES.auth.me);
       setUser(res.data);
       await fetchDischargeStatus(res.data);
+      return res.data;
     } catch (err) {
       console.error("Auth check failed", err);
       setUser(null);
       setIsDischarged(false);
       setIsDischargeStatusLoading(false);
       localStorage.removeItem("refresh_token");
+      return null;
     } finally {
       setLoading(false);
     }
