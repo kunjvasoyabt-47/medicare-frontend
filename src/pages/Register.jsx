@@ -19,7 +19,7 @@ import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { API_ROUTES } from "../lib/routes";
-import { saveTokensFromPayload } from "../lib/tokenStorage";
+import { getAccessToken, saveTokensFromPayload } from "../lib/tokenStorage";
 
 const FEATURES = [
   { icon: Heart, text: "All your health records in one place" },
@@ -296,8 +296,9 @@ export default function Register({ togglePage }) {
                     phone_number: values.phone_number,
                     password: values.password,
                   });
-                  const tokensStored = saveTokensFromPayload(response?.data);
-                  if (!tokensStored) {
+                  saveTokensFromPayload(response?.data || {});
+                  const accessToken = getAccessToken();
+                  if (!accessToken) {
                     throw new Error("TOKENS_NOT_PROVIDED");
                   }
 

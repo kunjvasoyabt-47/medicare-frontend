@@ -29,17 +29,29 @@ export const saveTokensFromPayload = (payload = {}) => {
 
   const accessToken = payload?.access_token;
   const refreshToken = payload?.refresh_token;
+  const hasAccessTokenField = Object.prototype.hasOwnProperty.call(
+    payload,
+    "access_token",
+  );
+  const hasRefreshTokenField = Object.prototype.hasOwnProperty.call(
+    payload,
+    "refresh_token",
+  );
 
-  if (isValidToken(accessToken)) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
-  } else {
-    localStorage.removeItem(ACCESS_TOKEN_KEY);
+  if (hasAccessTokenField) {
+    if (isValidToken(accessToken)) {
+      localStorage.setItem(ACCESS_TOKEN_KEY, accessToken);
+    } else {
+      localStorage.removeItem(ACCESS_TOKEN_KEY);
+    }
   }
 
-  if (isValidToken(refreshToken)) {
-    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
-  } else {
-    localStorage.removeItem(REFRESH_TOKEN_KEY);
+  if (hasRefreshTokenField) {
+    if (isValidToken(refreshToken)) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+    } else {
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
+    }
   }
 
   return isValidToken(accessToken) || isValidToken(refreshToken);

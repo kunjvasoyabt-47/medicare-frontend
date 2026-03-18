@@ -11,6 +11,7 @@ import {
   clearAuthTokens,
   getAccessToken,
   getRefreshToken,
+  saveTokensFromPayload,
 } from "../lib/tokenStorage";
 import SystemLoader from "../components/SystemLoader";
 
@@ -43,7 +44,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const checkAuth = useCallback(async () => {
-    const hasAnyToken = Boolean(getAccessToken() || getRefreshToken());
+    const accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
+    const hasAnyToken = Boolean(accessToken || refreshToken);
+
     if (!hasAnyToken) {
       setUser(null);
       setIsDischarged(false);
@@ -52,13 +56,31 @@ export function AuthProvider({ children }) {
       return null;
     }
 
+    if (!accessToken && refreshToken) {
+      try {
+        const refreshRes = await api.post(API_ROUTES.auth.refresh, {
+          refresh_token: refreshToken,
+        });
+        saveTokensFromPayload(refreshRes?.data || {});
+      } catch {
+        clearAuthTokens();
+        setUser(null);
+        setIsDischarged(false);
+        setIsDischargeStatusLoading(false);
+        setLoading(false);
+        return null;
+      }
+    }
+
     try {
       const res = await api.get(API_ROUTES.auth.me);
       setUser(res.data);
       await fetchDischargeStatus(res.data);
       return res.data;
     } catch (err) {
-      console.error("Auth check failed", err);
+      if (err?.response?.status !== 401) {
+        console.error("Auth check failed", err);
+      }
       setUser(null);
       setIsDischarged(false);
       setIsDischargeStatusLoading(false);
