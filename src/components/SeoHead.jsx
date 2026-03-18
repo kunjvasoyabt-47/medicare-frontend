@@ -13,7 +13,7 @@ const SITE_URL = normalizeUrl(
     (typeof window !== "undefined" ? window.location.origin : FALLBACK_ORIGIN),
 );
 const SITE_NAME = "Medicare";
-const DEFAULT_IMAGE = "/og-preview.svg";
+const DEFAULT_IMAGE = "/og-preview.png";
 
 const routeMeta = [
   {
@@ -83,12 +83,23 @@ export default function SeoHead() {
       <meta property="og:description" content={meta.description} />
       <meta property="og:url" content={canonical} />
       <meta property="og:image" content={ogImage} />
-      <meta property="og:image:alt" content="Medicare healthcare portal" />
+      <meta property="og:image:secure_url" content={ogImage} />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta
+        property="og:image:alt"
+        content="Medicare activity icon and healthcare portal"
+      />
 
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
       <meta name="twitter:image" content={ogImage} />
+      <meta
+        name="twitter:image:alt"
+        content="Medicare activity icon and healthcare portal"
+      />
     </Helmet>
   );
 }
