@@ -14,6 +14,7 @@ import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
 import { API_ROUTES } from "../../lib/routes";
 import SystemLoader from "../../components/SystemLoader";
+import ReportSummaryAccordion from "../../components/patient/ReportSummaryAccordion";
 
 function SectionHeader({ icon: Icon, title, count, colorClass, bgClass }) {
   return (
@@ -406,6 +407,11 @@ function PatientDischargeDetails() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Results Summary Accordion */}
+        <div className="mt-6">
+          <ReportSummaryAccordion dischargeId={id} />
         </div>
 
         {/* Medications */}
