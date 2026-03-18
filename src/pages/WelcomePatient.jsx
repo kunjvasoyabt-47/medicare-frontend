@@ -1,43 +1,95 @@
-import { useAuth } from '../context/AuthContext';
-import { LogOut, User, Mail, Hash } from 'lucide-react';
+import { useAuth } from "../context/AuthContext";
+import { LogOut, Activity, Mail, Hash } from "lucide-react";
 
 export default function WelcomePatient() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white rounded-[2.5rem] shadow-xl p-8 border border-slate-100">
-        <div className="flex justify-between items-start mb-8">
-          <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg">
-            <User size={24} />
+    <div
+      className="min-h-screen bg-slate-50 flex items-center justify-center p-6"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
+      <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Header */}
+        <div className="bg-slate-900 px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center text-white text-[16px] border border-white/15"
+              style={{ fontWeight: 700 }}
+            >
+              {user?.full_name?.charAt(0)?.toUpperCase() || "P"}
+            </div>
+            <div>
+              <p
+                className="text-slate-400 text-[11px]"
+                style={{ fontWeight: 400 }}
+              >
+                Signed in as
+              </p>
+              <p
+                className="text-white text-[14px] leading-tight"
+                style={{ fontWeight: 600 }}
+              >
+                {user?.full_name || "Patient"}
+              </p>
+            </div>
           </div>
-          {/* Logout Button */}
-          <button 
+          <button
             onClick={logout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl font-bold hover:bg-red-100 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-white rounded-lg text-[12px] border border-white/10 hover:bg-white/20 transition-all"
+            style={{ fontWeight: 500 }}
           >
-            <LogOut size={18} /> Logout
+            <LogOut size={13} /> Logout
           </button>
         </div>
 
-        <h1 className="text-2xl font-black text-slate-900 mb-2">
-          Welcome, {user?.full_name || 'Patient'}
-        </h1>
-        
-        <div className="space-y-4 mt-6">
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-            <Hash className="text-slate-400" size={20} />
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patient ID</p>
-              <p className="text-slate-700 font-bold">{user?.pid}</p>
-            </div>
+        {/* Body */}
+        <div className="p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity size={14} className="text-slate-400" />
+            <h2
+              className="text-slate-700 text-[13px]"
+              style={{ fontWeight: 600 }}
+            >
+              Account Details
+            </h2>
           </div>
-          
-          <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl">
-            <Mail className="text-slate-400" size={20} />
-            <div>
-              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</p>
-              <p className="text-slate-700 font-bold">{user?.email}</p>
+
+          <div className="space-y-2.5">
+            <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-lg border border-slate-100">
+              <Hash className="text-slate-400 shrink-0" size={14} />
+              <div className="min-w-0">
+                <p
+                  className="text-slate-400 text-[10px] uppercase tracking-widest mb-0.5"
+                  style={{ fontWeight: 600 }}
+                >
+                  Patient ID
+                </p>
+                <p
+                  className="text-slate-800 text-[13px] truncate"
+                  style={{ fontWeight: 500 }}
+                >
+                  {user?.pid || "—"}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 p-3.5 bg-slate-50 rounded-lg border border-slate-100">
+              <Mail className="text-slate-400 shrink-0" size={14} />
+              <div className="min-w-0">
+                <p
+                  className="text-slate-400 text-[10px] uppercase tracking-widest mb-0.5"
+                  style={{ fontWeight: 600 }}
+                >
+                  Email Address
+                </p>
+                <p
+                  className="text-slate-800 text-[13px] truncate"
+                  style={{ fontWeight: 500 }}
+                >
+                  {user?.email || "—"}
+                </p>
+              </div>
             </div>
           </div>
         </div>

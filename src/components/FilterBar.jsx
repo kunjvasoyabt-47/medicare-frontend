@@ -5,21 +5,12 @@ import { ChevronDown, CalendarDays } from "lucide-react";
  * FilterBar — renders a row of filter controls.
  * Consecutive date-type filters are automatically grouped
  * side-by-side on one line with a "–" separator.
- *
- * filters: Array<{
- *   key: string,
- *   label: string,
- *   type: "select" | "date",
- *   value: any,
- *   options?: Array<{ value: string, label: string }>
- * }>
  */
 export default function FilterBar({
   filters = [],
   onFilterChange,
   className = "",
 }) {
-  // Group consecutive date filters into pairs so they render on one line
   const groups = [];
   let i = 0;
   while (i < filters.length) {
@@ -34,29 +25,54 @@ export default function FilterBar({
     }
   }
 
+  const labelCls = "block text-slate-400 mb-1 leading-none whitespace-nowrap";
+  const labelStyle = {
+    fontSize: "10px",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.07em",
+    fontFamily: "'Inter', system-ui, sans-serif",
+  };
+
+  const inputCls =
+    "bg-white border border-slate-200 rounded-lg text-slate-700 outline-none " +
+    "hover:border-slate-300 focus:border-slate-400 focus:ring-2 focus:ring-slate-200 " +
+    "transition-all cursor-pointer";
+  const inputStyle = {
+    fontSize: "12px",
+    fontWeight: 500,
+    fontFamily: "'Inter', system-ui, sans-serif",
+    height: "34px",
+  };
+
   return (
-    <div className={`flex flex-wrap items-end gap-2 ${className}`}>
+    <div
+      className={`flex flex-wrap items-end gap-2 ${className}`}
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
       {groups.map((group) => {
         if (group.type === "date-pair") {
           const { from, to } = group;
           return (
-            <div key={`${from.key}-${to.key}`} className="flex-1 sm:flex-none">
-              {/* Shared label row */}
-              <div className="flex items-center gap-1.5 mb-1">
-                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none whitespace-nowrap">
+            <div key={`${from.key}-${to.key}`} className="flex flex-col">
+              <div className="flex items-center gap-1 mb-1">
+                <label style={labelStyle} className={labelCls}>
                   {from.label}
                 </label>
-                <span className="text-slate-300 text-[10px] font-black">–</span>
-                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none whitespace-nowrap">
+                <span
+                  className="text-slate-300 text-[10px]"
+                  style={{ fontWeight: 500 }}
+                >
+                  —
+                </span>
+                <label style={labelStyle} className={labelCls}>
                   {to.label}
                 </label>
               </div>
-
-              {/* Two inputs side-by-side */}
               <div className="flex items-center gap-1.5">
                 <div className="relative">
                   <CalendarDays
-                    size={13}
+                    size={12}
                     className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                     aria-hidden="true"
                   />
@@ -64,18 +80,20 @@ export default function FilterBar({
                     type="date"
                     value={from.value || ""}
                     onChange={(e) => onFilterChange(from.key, e.target.value)}
-                    className="w-full sm:w-[9rem] h-11 pl-7 pr-2 bg-white border border-slate-200 rounded-xl text-[12.5px] text-slate-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300/60 focus:border-slate-400 hover:border-slate-300 transition-all"
+                    className={inputCls + " pl-7 pr-2 w-[8.5rem]"}
+                    style={inputStyle}
                     aria-label={from.label}
                   />
                 </div>
-
-                <span className="text-slate-400 font-bold text-[13px] shrink-0">
+                <span
+                  className="text-slate-300 text-[12px]"
+                  style={{ fontWeight: 500 }}
+                >
                   →
                 </span>
-
                 <div className="relative">
                   <CalendarDays
-                    size={13}
+                    size={12}
                     className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
                     aria-hidden="true"
                   />
@@ -83,7 +101,8 @@ export default function FilterBar({
                     type="date"
                     value={to.value || ""}
                     onChange={(e) => onFilterChange(to.key, e.target.value)}
-                    className="w-full sm:w-[9rem] h-11 pl-7 pr-2 bg-white border border-slate-200 rounded-xl text-[12.5px] text-slate-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300/60 focus:border-slate-400 hover:border-slate-300 transition-all"
+                    className={inputCls + " pl-7 pr-2 w-[8.5rem]"}
+                    style={inputStyle}
                     aria-label={to.label}
                   />
                 </div>
@@ -92,58 +111,66 @@ export default function FilterBar({
           );
         }
 
-        // Single filter (select or standalone date)
         const { filter } = group;
-        return (
-          <div key={filter.key} className="flex-1 min-w-[140px] sm:flex-none">
-            {filter.type === "select" ? (
-              <div>
-                <label className="mb-1 block text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none">
-                  {filter.label}
-                </label>
-                <div className="relative">
-                  <select
-                    value={filter.value}
-                    onChange={(e) => onFilterChange(filter.key, e.target.value)}
-                    className="w-full sm:min-w-[11rem] appearance-none h-11 pl-3.5 pr-9 bg-white border border-slate-200 rounded-xl text-[13.5px] text-slate-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300/60 focus:border-slate-400 hover:border-slate-300 transition-all cursor-pointer"
-                    aria-label={filter.label}
-                  >
-                    {filter.options?.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                    aria-hidden="true"
-                  />
-                </div>
+
+        if (filter.type === "select") {
+          return (
+            <div key={filter.key} className="flex flex-col">
+              <label style={labelStyle} className={labelCls}>
+                {filter.label}
+              </label>
+              <div className="relative">
+                <select
+                  value={filter.value}
+                  onChange={(e) => onFilterChange(filter.key, e.target.value)}
+                  className={
+                    inputCls + " appearance-none pl-3 pr-8 min-w-[130px]"
+                  }
+                  style={inputStyle}
+                  aria-label={filter.label}
+                >
+                  {filter.options?.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  size={12}
+                  className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  aria-hidden="true"
+                />
               </div>
-            ) : filter.type === "date" ? (
-              <div>
-                <label className="mb-1 block text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none whitespace-nowrap">
-                  {filter.label}
-                </label>
-                <div className="relative">
-                  <CalendarDays
-                    size={13}
-                    className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    aria-hidden="true"
-                  />
-                  <input
-                    type="date"
-                    value={filter.value || ""}
-                    onChange={(e) => onFilterChange(filter.key, e.target.value)}
-                    className="w-full sm:min-w-[9.5rem] h-11 pl-7 pr-3 bg-white border border-slate-200 rounded-xl text-[13.5px] text-slate-700 font-semibold shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-300/60 focus:border-slate-400 hover:border-slate-300 transition-all"
-                    aria-label={filter.label}
-                  />
-                </div>
+            </div>
+          );
+        }
+
+        if (filter.type === "date") {
+          return (
+            <div key={filter.key} className="flex flex-col">
+              <label style={labelStyle} className={labelCls}>
+                {filter.label}
+              </label>
+              <div className="relative">
+                <CalendarDays
+                  size={12}
+                  className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  aria-hidden="true"
+                />
+                <input
+                  type="date"
+                  value={filter.value || ""}
+                  onChange={(e) => onFilterChange(filter.key, e.target.value)}
+                  className={inputCls + " pl-7 pr-2 w-[9rem]"}
+                  style={inputStyle}
+                  aria-label={filter.label}
+                />
               </div>
-            ) : null}
-          </div>
-        );
+            </div>
+          );
+        }
+
+        return null;
       })}
     </div>
   );

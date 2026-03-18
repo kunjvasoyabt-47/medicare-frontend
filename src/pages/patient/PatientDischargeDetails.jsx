@@ -1,4 +1,4 @@
-import {useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -9,7 +9,6 @@ import {
   ExternalLink,
   Calendar,
   AlertCircle,
-
 } from "lucide-react";
 import PatientLayout from "../../components/patient/PatientLayout";
 import api from "../../lib/axios";
@@ -18,13 +17,19 @@ import SystemLoader from "../../components/SystemLoader";
 
 function SectionHeader({ icon: Icon, title, count, colorClass, bgClass }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <div className={`p-2 rounded-xl ${bgClass}`}>
-        <Icon size={18} className={colorClass} />
+    <div className="flex items-center gap-2.5 mb-4 pb-3 border-b border-slate-100">
+      <div className={`p-1.5 rounded-lg ${bgClass}`}>
+        <Icon size={15} className={colorClass} />
       </div>
-      <h2 className="font-black text-slate-900 text-[16px]">{title}</h2>
+      <h2
+        className="text-slate-900 text-[14px] flex-1"
+        style={{ fontWeight: 600 }}
+      >
+        {title}
+      </h2>
       <span
-        className={`ml-auto px-2.5 py-1 rounded-xl text-[12px] font-black ${bgClass} ${colorClass}`}
+        className={`px-2 py-0.5 rounded-md text-[11px] ${bgClass} ${colorClass}`}
+        style={{ fontWeight: 500 }}
       >
         {count}
       </span>
@@ -34,14 +39,22 @@ function SectionHeader({ icon: Icon, title, count, colorClass, bgClass }) {
 
 function PdfCard({ title, subtitle, url }) {
   return (
-    <div className="flex items-center gap-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-slate-300 hover:bg-slate-100 transition-all group">
-      <div className="p-2.5 bg-white text-slate-400 rounded-xl shadow-sm border border-slate-100 shrink-0 group-hover:bg-[#0f172a] group-hover:text-white transition-all">
-        <FileText size={16} />
+    <div className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 transition-all group">
+      <div className="p-2 bg-white text-slate-400 rounded-lg border border-slate-200 shrink-0 group-hover:bg-slate-900 group-hover:text-white transition-all">
+        <FileText size={14} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-slate-800 text-[13px] truncate">{title}</p>
+        <p
+          className="text-slate-800 text-[13px] truncate"
+          style={{ fontWeight: 500 }}
+        >
+          {title}
+        </p>
         {subtitle && (
-          <p className="text-slate-500 text-[12px] mt-0.5 truncate">
+          <p
+            className="text-slate-500 text-[12px] mt-0.5 truncate"
+            style={{ fontWeight: 400 }}
+          >
             {subtitle}
           </p>
         )}
@@ -52,12 +65,16 @@ function PdfCard({ title, subtitle, url }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-[#0f172a] text-white rounded-xl text-[12px] font-bold hover:bg-slate-700 transition-all"
+          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[12px] hover:bg-slate-700 transition-all"
+          style={{ fontWeight: 500 }}
         >
-          <ExternalLink size={12} /> Open PDF
+          <ExternalLink size={11} /> Open PDF
         </a>
       ) : (
-        <span className="shrink-0 text-[11px] text-slate-400 font-semibold">
+        <span
+          className="shrink-0 text-[11px] text-slate-400"
+          style={{ fontWeight: 400 }}
+        >
           No PDF
         </span>
       )}
@@ -67,40 +84,50 @@ function PdfCard({ title, subtitle, url }) {
 
 function MedCard({ med }) {
   return (
-    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl hover:border-slate-300 transition-all">
+    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 transition-all">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="font-black text-slate-900 text-[14px]">
+          <p className="text-slate-900 text-[13px]" style={{ fontWeight: 600 }}>
             {med.drug_name}
           </p>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1.5">
+          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
             {med.strength && (
-              <span className="text-[12px] text-slate-600 font-semibold">
+              <span
+                className="text-[12px] text-slate-500"
+                style={{ fontWeight: 400 }}
+              >
                 {med.strength}
               </span>
             )}
             {med.dosage && (
-              <span className="text-[12px] text-slate-500 font-semibold">
+              <span
+                className="text-[12px] text-slate-500"
+                style={{ fontWeight: 400 }}
+              >
                 Dose: {med.dosage}
               </span>
             )}
             {med.frequency_of_dose_per_day && (
-              <span className="text-[12px] text-slate-500 font-semibold">
-                {med.frequency_of_dose_per_day}x daily
+              <span
+                className="text-[12px] text-slate-500"
+                style={{ fontWeight: 400 }}
+              >
+                {med.frequency_of_dose_per_day}×/day
               </span>
             )}
             {med.form_of_medicine && (
-              <span className="text-[12px] text-slate-500 font-semibold capitalize">
+              <span
+                className="text-[12px] text-slate-500 capitalize"
+                style={{ fontWeight: 400 }}
+              >
                 {med.form_of_medicine}
               </span>
             )}
           </div>
         </div>
         <span
-          className={`shrink-0 px-2.5 py-1 rounded-xl text-[11px] font-black ${med.is_active
-            ? "bg-emerald-50 text-emerald-600"
-            : "bg-slate-100 text-slate-500"
-            }`}
+          className={`shrink-0 px-2 py-0.5 rounded-md text-[11px] ${med.is_active ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+          style={{ fontWeight: 500 }}
         >
           {med.is_active ? "Active" : "Inactive"}
         </span>
@@ -121,27 +148,25 @@ function PatientDischargeDetails() {
       .get(API_ROUTES.patient.dischargeDocuments(id))
       .then((r) => {
         setData(r.data);
-
-        // Now fetch the PDF URLs
         api
           .get(API_ROUTES.patient.dischargePdfs(id))
           .then((pdfResponse) => {
-            // Merge the new document URLs with existing data
             setData((prevData) => ({
               ...prevData,
               discharge_summary_url: pdfResponse.data.discharge_summary_url,
-              patient_friendly_summary_url: pdfResponse.data.patient_friendly_summary_url,
-              insurance_ready_url: pdfResponse.data.insurance_ready_url
+              patient_friendly_summary_url:
+                pdfResponse.data.patient_friendly_summary_url,
+              insurance_ready_url: pdfResponse.data.insurance_ready_url,
             }));
           })
-          .catch((err) => {
-            console.error("Failed to fetch additional documents:", err);
-          });
+          .catch(console.error);
       })
       .catch((err) => {
-        if (err?.response?.status === 404)
-          setError("Discharge record not found.");
-        else setError("Failed to load discharge details.");
+        setError(
+          err?.response?.status === 404
+            ? "Discharge record not found."
+            : "Failed to load discharge details.",
+        );
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -149,7 +174,10 @@ function PatientDischargeDetails() {
   if (loading) {
     return (
       <PatientLayout>
-        <SystemLoader label="Loading Discharge Details" sublabel="Gathering your document timeline" />
+        <SystemLoader
+          label="Loading Discharge Details"
+          sublabel="Gathering your document timeline"
+        />
       </PatientLayout>
     );
   }
@@ -158,11 +186,14 @@ function PatientDischargeDetails() {
     return (
       <PatientLayout>
         <div className="max-w-2xl mx-auto text-center py-20">
-          <AlertCircle size={40} className="text-red-400 mx-auto mb-4" />
-          <p className="text-slate-600 font-bold text-[16px]">{error}</p>
+          <AlertCircle size={36} className="text-red-400 mx-auto mb-4" />
+          <p className="text-slate-600 text-[15px]" style={{ fontWeight: 500 }}>
+            {error}
+          </p>
           <button
             onClick={() => navigate(-1)}
-            className="mt-6 px-5 py-2.5 bg-[#0f172a] text-white rounded-xl font-bold text-[14px] hover:bg-slate-700 transition-all"
+            className="mt-6 px-5 py-2.5 bg-slate-900 text-white rounded-lg text-[13px] hover:bg-slate-700 transition-all"
+            style={{ fontWeight: 500 }}
           >
             Go Back
           </button>
@@ -174,71 +205,95 @@ function PatientDischargeDetails() {
   return (
     <PatientLayout>
       <div className="max-w-4xl mx-auto">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-6 px-4 py-2.5 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 transition-all text-[14px]"
+          className="flex items-center gap-2 mb-5 px-3.5 py-2 bg-white text-slate-600 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all text-[13px]"
+          style={{ fontWeight: 500 }}
         >
-          <ArrowLeft size={16} /> Back to History
+          <ArrowLeft size={14} /> Back to History
         </button>
 
         {/* Header */}
-        <div className="bg-[#0f172a] rounded-3xl p-6 mb-6 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5 grid-pattern" />
-          <div className="relative">
-            <div className="flex flex-wrap items-center gap-3 mb-3">
-              <h1 className="text-white font-black text-[20px]">
-                Discharge #{String(data.discharge_id).padStart(4, "0")}
-              </h1>
-              <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/30">
-                Completed
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-slate-400 text-[13px] font-semibold">
-              <Calendar size={13} />
-              {data.discharge_date || "Date not recorded"}
-            </div>
+        <div className="bg-slate-900 rounded-xl p-5 mb-5">
+          <div className="flex flex-wrap items-center gap-3 mb-2">
+            <h1 className="text-white text-[18px]" style={{ fontWeight: 600 }}>
+              Discharge #{String(data.discharge_id).padStart(4, "0")}
+            </h1>
+            <span
+              className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded-full text-[10px] border border-emerald-500/30"
+              style={{
+                fontWeight: 600,
+                letterSpacing: "0.06em",
+                textTransform: "uppercase",
+              }}
+            >
+              Completed
+            </span>
+          </div>
+          <div
+            className="flex items-center gap-1.5 text-slate-400 text-[13px] mb-4"
+            style={{ fontWeight: 400 }}
+          >
+            <Calendar size={12} />
+            {data.discharge_date || "Date not recorded"}
           </div>
 
-          {/* Doc summary */}
-          <div className="relative flex flex-wrap gap-3 mt-4">
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-              <FlaskConical size={14} className="text-blue-300" />
-              <span className="text-white text-[13px] font-bold">
-                {data.reports?.length || 0} Reports
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-              <Receipt size={14} className="text-violet-300" />
-              <span className="text-white text-[13px] font-bold">
-                {data.bills?.length || 0} Bills
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-              <Pill size={14} className="text-teal-300" />
-              <span className="text-white text-[13px] font-bold">
-                {data.medications?.length || 0} Medications
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-              <FileText size={14} className="text-emerald-300" />
-              <span className="text-white text-[13px] font-bold">
-                {data.discharge_summary_url ? "1" : "0"} Discharge Summary
-              </span>
-            </div>
-            <div className="flex items-center gap-2 px-4 py-2 bg-white/10 rounded-xl border border-white/10">
-              <FileText size={14} className="text-amber-300" />
-              <span className="text-white text-[13px] font-bold">
-                {data.patient_friendly_summary_url ? "1" : "0"} Patient-Friendly
-              </span>
-            </div>
+          <div
+            className="flex flex-wrap gap-2 pt-3 border-t"
+            style={{ borderColor: "rgba(255,255,255,0.08)" }}
+          >
+            {[
+              {
+                icon: FlaskConical,
+                count: data.reports?.length || 0,
+                label: "Reports",
+                color: "text-blue-300",
+              },
+              {
+                icon: Receipt,
+                count: data.bills?.length || 0,
+                label: "Bills",
+                color: "text-violet-300",
+              },
+              {
+                icon: Pill,
+                count: data.medications?.length || 0,
+                label: "Medications",
+                color: "text-teal-300",
+              },
+              {
+                icon: FileText,
+                count: data.discharge_summary_url ? 1 : 0,
+                label: "Summary",
+                color: "text-emerald-300",
+              },
+              {
+                icon: FileText,
+                count: data.patient_friendly_summary_url ? 1 : 0,
+                label: "Patient Report",
+                color: "text-amber-300",
+              },
+            ].map(({ icon: Icon, count, label, color }) => (
+              <div
+                key={label}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/8 rounded-lg border"
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              >
+                <Icon size={12} className={color} />
+                <span
+                  className="text-white text-[12px]"
+                  style={{ fontWeight: 500 }}
+                >
+                  {count} {label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Sections */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Reports */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+        {/* Document sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
             <SectionHeader
               icon={FlaskConical}
               title="Medical Reports"
@@ -247,7 +302,10 @@ function PatientDischargeDetails() {
               bgClass="bg-blue-50"
             />
             {data.reports?.length === 0 ? (
-              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+              <p
+                className="text-slate-400 text-[13px] text-center py-5"
+                style={{ fontWeight: 400 }}
+              >
                 No reports available
               </p>
             ) : (
@@ -268,8 +326,7 @@ function PatientDischargeDetails() {
             )}
           </div>
 
-          {/* Bills */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
             <SectionHeader
               icon={Receipt}
               title="Bills"
@@ -278,7 +335,10 @@ function PatientDischargeDetails() {
               bgClass="bg-violet-50"
             />
             {data.bills?.length === 0 ? (
-              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+              <p
+                className="text-slate-400 text-[13px] text-center py-5"
+                style={{ fontWeight: 400 }}
+              >
                 No bills available
               </p>
             ) : (
@@ -295,8 +355,7 @@ function PatientDischargeDetails() {
             )}
           </div>
 
-          {/* Discharge Summary */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
             <SectionHeader
               icon={FileText}
               title="Discharge Summary"
@@ -305,7 +364,10 @@ function PatientDischargeDetails() {
               bgClass="bg-emerald-50"
             />
             {!data.discharge_summary_url ? (
-              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+              <p
+                className="text-slate-400 text-[13px] text-center py-5"
+                style={{ fontWeight: 400 }}
+              >
                 No discharge summary available
               </p>
             ) : (
@@ -319,8 +381,7 @@ function PatientDischargeDetails() {
             )}
           </div>
 
-          {/* Patient-Friendly Report */}
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
             <SectionHeader
               icon={FileText}
               title="Patient-Friendly Report"
@@ -329,7 +390,10 @@ function PatientDischargeDetails() {
               bgClass="bg-amber-50"
             />
             {!data.patient_friendly_summary_url ? (
-              <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+              <p
+                className="text-slate-400 text-[13px] text-center py-5"
+                style={{ fontWeight: 400 }}
+              >
                 No patient-friendly report available
               </p>
             ) : (
@@ -345,7 +409,7 @@ function PatientDischargeDetails() {
         </div>
 
         {/* Medications */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6 mt-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-5 mt-4">
           <SectionHeader
             icon={Pill}
             title="Medications"
@@ -354,11 +418,14 @@ function PatientDischargeDetails() {
             bgClass="bg-teal-50"
           />
           {data.medications?.length === 0 ? (
-            <p className="text-slate-400 text-[13px] text-center py-6 font-semibold">
+            <p
+              className="text-slate-400 text-[13px] text-center py-5"
+              style={{ fontWeight: 400 }}
+            >
               No medications recorded
             </p>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {data.medications.map((m) => (
                 <MedCard key={m.id} med={m} />
               ))}

@@ -15,31 +15,27 @@ import SystemLoader from "../../components/SystemLoader";
 
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
+    <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
       <div
-        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${bgClass} group-hover:scale-110 transition-transform`}
+        className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${bgClass}`}
       >
-        <Icon size={22} className={colorClass} />
+        <Icon size={18} className={colorClass} />
       </div>
       <div>
-        <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">
+        <p
+          className="text-slate-500 text-[11px] uppercase tracking-widest mb-0.5"
+          style={{ fontWeight: 500 }}
+        >
           {label}
         </p>
-        <p className="text-slate-900 text-[30px] font-black leading-none mt-0.5 tabular-nums">
-          {value ?? <span className="text-slate-200 text-[24px]">—</span>}
+        <p
+          className="text-slate-900 text-[28px] leading-none tabular-nums"
+          style={{ fontWeight: 700 }}
+        >
+          {value ?? <span className="text-slate-200 text-[22px]">—</span>}
         </p>
       </div>
     </div>
-  );
-}
-
-function DocBadge({ count, label, colorClass, bgClass }) {
-  return (
-    <span
-      className={`px-2 py-0.5 rounded-lg text-[11px] font-bold ${bgClass} ${colorClass}`}
-    >
-      {count} {label}
-    </span>
   );
 }
 
@@ -59,7 +55,10 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <AdminLayout>
-        <SystemLoader label="Loading Dashboard" sublabel="Collecting discharge analytics" />
+        <SystemLoader
+          label="Loading Dashboard"
+          sublabel="Collecting discharge analytics"
+        />
       </AdminLayout>
     );
   }
@@ -67,18 +66,22 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Page header */}
-        <div className="mb-8">
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight">
+        <div className="mb-7">
+          <h1
+            className="text-slate-900 text-[22px]"
+            style={{ fontWeight: 700, letterSpacing: "-0.02em" }}
+          >
             Dashboard
           </h1>
-          <p className="text-slate-400 font-medium mt-1 text-[14px]">
+          <p
+            className="text-slate-500 text-[13px] mt-1"
+            style={{ fontWeight: 400 }}
+          >
             Overview of patient management and discharge activity
           </p>
         </div>
 
-        {/* Stats grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-7">
           <StatCard
             icon={Users}
             label="Total Patients"
@@ -110,27 +113,34 @@ export default function AdminDashboard() {
         </div>
 
         {/* Recent Discharges */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-slate-50 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="font-black text-slate-900 text-[16px] flex items-center gap-2">
-              <Calendar size={18} className="text-slate-400" />
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+            <h2
+              className="text-slate-900 text-[14px] flex items-center gap-2"
+              style={{ fontWeight: 600 }}
+            >
+              <Calendar size={15} className="text-slate-400" />
               Recent Discharges
             </h2>
             <button
               onClick={() => navigate("/admin/discharge-history")}
-              className="text-[13px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+              className="text-[12px] text-slate-600 hover:text-slate-900 flex items-center gap-1 transition-colors"
+              style={{ fontWeight: 500 }}
             >
-              View All <ChevronRight size={14} />
+              View all <ChevronRight size={13} />
             </button>
           </div>
 
           {!stats?.recent_discharges?.length ? (
-            <div className="py-16 text-center">
+            <div className="py-14 text-center">
               <ClipboardList
-                size={36}
+                size={32}
                 className="text-slate-200 mx-auto mb-3"
               />
-              <p className="text-slate-400 font-semibold text-[14px]">
+              <p
+                className="text-slate-400 text-[13px]"
+                style={{ fontWeight: 500 }}
+              >
                 No discharge records yet
               </p>
             </div>
@@ -138,74 +148,87 @@ export default function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-slate-50">
-                    <th className="text-left py-3 px-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                      Patient
-                    </th>
-                    <th className="text-left py-3 px-4 text-[11px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">
-                      Discharge Date
-                    </th>
-                    <th className="text-left py-3 px-4 text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">
-                      Documents
-                    </th>
-                    <th className="py-3 px-4 w-10" />
+                  <tr className="border-b border-slate-100">
+                    {["Patient", "Discharge Date", "Documents", ""].map(
+                      (h, i) => (
+                        <th
+                          key={i}
+                          className={`text-left py-3 px-5 text-[10px] text-slate-400 uppercase tracking-widest ${i === 1 ? "hidden md:table-cell" : ""} ${i === 2 ? "hidden sm:table-cell" : ""}`}
+                          style={{ fontWeight: 600 }}
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
                   {stats.recent_discharges.map((d) => (
                     <tr
                       key={d.discharge_id}
-                      className="hover:bg-slate-50/70 cursor-pointer transition-colors group"
+                      className="hover:bg-slate-50 cursor-pointer transition-colors group"
                       onClick={() =>
                         navigate(`/admin/discharge/${d.discharge_id}`)
                       }
                     >
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-sm uppercase shrink-0 shadow-sm">
+                          <div
+                            className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[12px] uppercase shrink-0"
+                            style={{ fontWeight: 600 }}
+                          >
                             {d.patient_name?.charAt(0)}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-900 text-[14px] truncate">
+                            <p
+                              className="text-slate-900 text-[13px] truncate"
+                              style={{ fontWeight: 500 }}
+                            >
                               {d.patient_name}
                             </p>
-                            <p className="text-slate-400 text-[12px] truncate">
+                            <p
+                              className="text-slate-400 text-[12px] truncate"
+                              style={{ fontWeight: 400 }}
+                            >
                               {d.patient_email}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 hidden md:table-cell">
-                        <span className="text-[13px] font-semibold text-slate-700">
+                      <td className="py-3.5 px-5 hidden md:table-cell">
+                        <span
+                          className="text-slate-700 text-[13px]"
+                          style={{ fontWeight: 400 }}
+                        >
                           {d.discharge_date || "—"}
                         </span>
                       </td>
-                      <td className="py-4 px-4 hidden sm:table-cell">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <DocBadge
-                            count={d.processed_reports}
-                            label="R"
-                            colorClass="text-blue-600"
-                            bgClass="bg-blue-50"
-                          />
-                          <DocBadge
-                            count={d.processed_bills}
-                            label="B"
-                            colorClass="text-violet-600"
-                            bgClass="bg-violet-50"
-                          />
-                          <DocBadge
-                            count={d.processed_prescriptions}
-                            label="Rx"
-                            colorClass="text-teal-600"
-                            bgClass="bg-teal-50"
-                          />
+                      <td className="py-3.5 px-5 hidden sm:table-cell">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[11px]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            {d.processed_reports}R
+                          </span>
+                          <span
+                            className="px-2 py-0.5 bg-violet-50 text-violet-600 rounded-md text-[11px]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            {d.processed_bills}B
+                          </span>
+                          <span
+                            className="px-2 py-0.5 bg-teal-50 text-teal-600 rounded-md text-[11px]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            {d.processed_prescriptions}Rx
+                          </span>
                         </div>
                       </td>
-                      <td className="py-4 px-4 text-right">
+                      <td className="py-3.5 px-5 text-right">
                         <ChevronRight
-                          size={16}
-                          className="text-slate-300 group-hover:text-slate-600 ml-auto transition-colors"
+                          size={14}
+                          className="text-slate-300 group-hover:text-slate-500 ml-auto transition-colors"
                         />
                       </td>
                     </tr>

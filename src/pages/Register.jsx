@@ -11,7 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { registerSchema } from "../lib/validation";
 import { PasswordStrengthField } from "../components/PasswordStrengthField";
@@ -40,24 +40,21 @@ const COUNTRY_CODES = [
   { code: "+31", country: "Netherlands", iso: "NL" },
   { code: "+32", country: "Belgium", iso: "BE" },
   { code: "+41", country: "Switzerland", iso: "CH" },
-  { code: "+43", country: "Austria", iso: "AT" },
-  { code: "+45", country: "Denmark", iso: "DK" },
-  { code: "+46", country: "Sweden", iso: "SE" },
-  { code: "+47", country: "Norway", iso: "NO" },
-  { code: "+48", country: "Poland", iso: "PL" },
-  { code: "+55", country: "Brazil", iso: "BR" },
-  { code: "+56", country: "Chile", iso: "CL" },
-  { code: "+57", country: "Colombia", iso: "CO" },
-  { code: "+60", country: "Malaysia", iso: "MY" },
-  { code: "+62", country: "Indonesia", iso: "ID" },
-  { code: "+63", country: "Philippines", iso: "PH" },
-  { code: "+64", country: "New Zealand", iso: "NZ" },
   { code: "+65", country: "Singapore", iso: "SG" },
-  { code: "+66", country: "Thailand", iso: "TH" },
-  { code: "+82", country: "South Korea", iso: "KR" },
-  { code: "+84", country: "Vietnam", iso: "VN" },
-  { code: "+90", country: "Turkey", iso: "TR" },
+  { code: "+60", country: "Malaysia", iso: "MY" },
+  { code: "+55", country: "Brazil", iso: "BR" },
 ];
+
+const inputBase =
+  "w-full px-3.5 py-2 rounded-xl border bg-white text-slate-900 outline-none transition-all text-[13px]";
+
+function fieldStyle(hasError, hasValid, isFocused) {
+  return {
+    borderColor: hasError ? "#fca5a5" : hasValid ? "#6ee7b7" : "#e2e8f0",
+    boxShadow: isFocused ? "0 0 0 3px rgba(15,23,42,0.07)" : "none",
+    fontWeight: 400,
+  };
+}
 
 export default function Register({ togglePage }) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -75,27 +72,22 @@ export default function Register({ togglePage }) {
 
   const handleCountryCodeChange = (value, setFieldValue) => {
     setFieldValue("country_code", value);
-
     if (value.trim() === "") {
       setCountryCodeSuggestions([]);
       setShowCountrySuggestions(false);
     } else {
-      // Check if the input matches a country name exactly (case-insensitive)
       const exactMatch = COUNTRY_CODES.find(
-        (item) => item.country.toLowerCase() === value.toLowerCase()
+        (item) => item.country.toLowerCase() === value.toLowerCase(),
       );
-
       if (exactMatch) {
-        // Auto-convert country name to country code
         setFieldValue("country_code", exactMatch.code);
         setCountryCodeSuggestions([]);
         setShowCountrySuggestions(false);
       } else {
-        // Show suggestions for partial matches
         const filtered = COUNTRY_CODES.filter(
           (item) =>
             item.code.toLowerCase().includes(value.toLowerCase()) ||
-            item.country.toLowerCase().includes(value.toLowerCase())
+            item.country.toLowerCase().includes(value.toLowerCase()),
         );
         setCountryCodeSuggestions(filtered);
         setShowCountrySuggestions(true);
@@ -109,56 +101,40 @@ export default function Register({ togglePage }) {
     setCountryCodeSuggestions([]);
   };
 
-  const handleCountryCodeBlur = (value, setFieldValue, setFieldTouched, validateField) => {
-    // Only auto-convert if user didn't click on a suggestion
-    // The suggestion click will handle its own conversion
-
-    // Check if input is a country code (starts with +)
+  const handleCountryCodeBlur = (
+    value,
+    setFieldValue,
+    setFieldTouched,
+    validateField,
+  ) => {
     if (value.startsWith("+")) {
-      // It's already a code, keep it
       setShowCountrySuggestions(false);
       setFocusedField("");
       setFieldTouched("country_code", true, false);
       validateField("country_code");
     } else if (value.trim() !== "") {
-      // It's a country name or partial match, try to find and convert
       const exactMatch = COUNTRY_CODES.find(
-        (item) => item.country.toLowerCase() === value.toLowerCase()
+        (item) => item.country.toLowerCase() === value.toLowerCase(),
       );
-
       if (exactMatch) {
-        // Exact match found, convert to code
-        setFieldValue("country_code", exactMatch.code, true); // true = skip validation
-        setShowCountrySuggestions(false);
-        setFocusedField("");
-        setFieldTouched("country_code", true, false);
-        validateField("country_code");
+        setFieldValue("country_code", exactMatch.code, true);
       } else {
-        // Partial match, find the best match
         const partialMatch = COUNTRY_CODES.find(
           (item) =>
             item.country.toLowerCase().startsWith(value.toLowerCase()) ||
-            item.code.toLowerCase().includes(value.toLowerCase())
+            item.code.toLowerCase().includes(value.toLowerCase()),
         );
-
-        if (partialMatch) {
-          // Found a match, convert to code
-          setFieldValue("country_code", partialMatch.code, true); // true = skip validation
-          setShowCountrySuggestions(false);
-          setFocusedField("");
-          setFieldTouched("country_code", true, false);
-          validateField("country_code");
-        } else {
-          // No match found, reset to default
-          setFieldValue("country_code", "+91", true); // true = skip validation
-          setShowCountrySuggestions(false);
-          setFocusedField("");
-          setFieldTouched("country_code", true, false);
-          validateField("country_code");
-        }
+        setFieldValue(
+          "country_code",
+          partialMatch ? partialMatch.code : "+91",
+          true,
+        );
       }
+      setShowCountrySuggestions(false);
+      setFocusedField("");
+      setFieldTouched("country_code", true, false);
+      validateField("country_code");
     } else {
-      // Empty value
       setShowCountrySuggestions(false);
       setFocusedField("");
       setFieldTouched("country_code", true, false);
@@ -167,150 +143,247 @@ export default function Register({ togglePage }) {
   };
 
   return (
-    <>
+    <div
+      className="h-screen flex overflow-hidden"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
+      {/* Left Panel */}
+      <div
+        className="hidden lg:flex lg:w-[40%] flex-col justify-between p-10 flex-shrink-0 relative overflow-hidden"
+        style={{ backgroundColor: "#0f172a" }}
+      >
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
 
-      <div className="min-h-screen flex bg-white">
-        {/* Left Panel */}
-        <div className="reg-panel hidden lg:flex lg:w-[42%] bg-slate-900 relative overflow-hidden flex-col justify-between p-12 flex-shrink-0">
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                <Activity size={20} className="text-slate-900" />
-              </div>
-              <span className="text-white font-black text-xl tracking-tight">Medicare</span>
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow">
+              <Activity size={18} className="text-slate-900" />
             </div>
-
-            <div className="w-10 h-0.5 bg-white opacity-15 mb-4" />
-            <h1 className="text-white text-4xl font-black leading-tight tracking-tight mt-5 mb-3 r-heading">
-              Better health
-              <span>starts here</span>
-            </h1>
-            <p className="text-white/45 text-sm leading-relaxed max-w-xs mb-8">
-              Create your free account and take control of your healthcare
-              journey with a platform built for you.
-            </p>
-            <div className="flex flex-col gap-3.5">
-              {FEATURES.map((feature) => {
-                const FeatureIcon = feature.icon;
-                return (
-                  <div key={feature.text} className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center flex-shrink-0">
-                      <FeatureIcon size={14} className="text-white" />
-                    </div>
-                    <span className="text-white/60 text-sm">{feature.text}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <span
+              className="text-white text-[17px]"
+              style={{ fontWeight: 600 }}
+            >
+              Medicare
+            </span>
           </div>
 
+          <p
+            className="text-slate-500 text-[12px] uppercase tracking-widest mb-4"
+            style={{ fontWeight: 500, letterSpacing: "0.12em" }}
+          >
+            New Account
+          </p>
+          <h1
+            className="text-white mb-5 leading-tight"
+            style={{
+              fontFamily: "'Georgia', 'Times New Roman', serif",
+              fontSize: "clamp(28px, 3vw, 42px)",
+              fontWeight: 400,
+              lineHeight: 1.15,
+            }}
+          >
+            Better health
+            <br />
+            <em>starts here.</em>
+          </h1>
+          <p
+            className="text-slate-400 leading-relaxed max-w-xs mb-6"
+            style={{ fontSize: "13px", fontWeight: 400, lineHeight: 1.7 }}
+          >
+            Create your free account and take full control of your healthcare
+            journey with a platform built around you.
+          </p>
 
+          <div className="space-y-3">
+            {FEATURES.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <div key={feature.text} className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-lg bg-white/8 border border-white/10 flex items-center justify-center shrink-0">
+                    <Icon size={13} className="text-slate-400" />
+                  </div>
+                  <span
+                    className="text-slate-400 text-[13px]"
+                    style={{ fontWeight: 400 }}
+                  >
+                    {feature.text}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Right Form */}
-        <div className="flex-1 overflow-y-auto bg-white">
-          <div className="min-h-full flex justify-center items-center p-5 sm:p-6">
-            <div className="w-full max-w-xl">
-              <div className="flex lg:hidden items-center gap-2.5 mb-5">
-                <div className="w-9 h-9 bg-slate-900 rounded-2xl flex items-center justify-center">
-                  <Activity size={18} className="text-white" />
-                </div>
-                <span className="font-black text-lg text-slate-900 tracking-tight">Medicare</span>
+        <div className="relative z-10">
+          <p className="text-slate-600 text-[12px]" style={{ fontWeight: 400 }}>
+            © 2026 Medicare · Secure & Private
+          </p>
+        </div>
+      </div>
+
+      {/* Right Form */}
+      <div className="flex-1 overflow-y-auto bg-white min-h-0">
+        <div className="min-h-full flex justify-center items-start py-7 px-5 sm:px-10">
+          <div className="w-full max-w-lg">
+            {/* Mobile brand */}
+            <div className="flex lg:hidden items-center gap-2.5 mb-6">
+              <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+                <Activity size={16} className="text-white" />
               </div>
-
-              <h1 className="text-xl font-black text-slate-900 tracking-tight mb-1">Create your account</h1>
-              <p className="text-xs text-slate-500 font-normal mb-4 leading-relaxed">
-                Fill in your details to get started
-              </p>
-
-              {regError && (
-                <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded-2xl p-3 text-red-600 text-sm font-medium mb-3 leading-relaxed">
-                  <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                  <span>{regError}</span>
-                </div>
-              )}
-
-              <Formik
-                initialValues={{
-                  full_name: "",
-                  email: "",
-                  gender: "",
-                  dob: "",
-                  country_code: "+91",
-                  phone_number: "",
-                  password: "",
-                  confirmPassword: "",
-                }}
-                validationSchema={registerSchema}
-                validateOnChange={false}
-                validateOnBlur={true}
-                onSubmit={async (values, { setSubmitting }) => {
-                  setRegError("");
-                  try {
-                    const response = await api.post(API_ROUTES.auth.register, {
-                      full_name: values.full_name,
-                      email: values.email,
-                      dob: values.dob,
-                      gender: values.gender,
-                      country_code: values.country_code,
-                      phone_number: values.phone_number,
-                      password: values.password,
-                    });
-                    localStorage.setItem(
-                      "refresh_token",
-                      response.data.refresh_token,
-                    );
-                    await checkAuth();
-                    navigate("/welcome-patient");
-                  } catch (err) {
-                    setRegError(
-                      err.response?.data?.detail ||
-                      "Registration failed. Please try again.",
-                    );
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
+              <span
+                className="text-slate-900 text-[16px]"
+                style={{ fontWeight: 600 }}
               >
-                {({
-                  errors,
-                  touched,
-                  values,
-                  isSubmitting,
-                  handleChange,
-                  handleBlur,
-                  setFieldValue,
-                  setFieldTouched,
-                  validateField,
-                }) => {
-                  const selectedCountry = COUNTRY_CODES.find(
-                    (item) => item.code === values.country_code,
-                  );
-                  const phoneHasInvalidChars = /[^0-9-]/.test(
-                    values.phone_number || "",
-                  );
-                  const showPhoneError = Boolean(
-                    errors.phone_number &&
-                    touched.phone_number &&
-                    (focusedField !== "phone_number" || phoneHasInvalidChars),
-                  );
+                Medicare
+              </span>
+            </div>
 
-                  return (
-                  <Form>
-                    {/* Row 1 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 sm:gap-3">
-                      <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Full Name</label>
+            <h2
+              className="text-slate-900 mb-1"
+              style={{
+                fontSize: "22px",
+                fontWeight: 700,
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Create your account
+            </h2>
+            <p
+              className="text-slate-500 mb-5"
+              style={{ fontSize: "13px", fontWeight: 400 }}
+            >
+              Fill in your details to get started
+            </p>
+
+            {regError && (
+              <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl p-3 text-red-600 text-[13px] mb-4 leading-relaxed">
+                <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
+                <span style={{ fontWeight: 500 }}>{regError}</span>
+              </div>
+            )}
+
+            <Formik
+              initialValues={{
+                full_name: "",
+                email: "",
+                gender: "",
+                dob: "",
+                country_code: "+91",
+                phone_number: "",
+                password: "",
+                confirmPassword: "",
+              }}
+              validationSchema={registerSchema}
+              validateOnChange={false}
+              validateOnBlur={true}
+              onSubmit={async (values, { setSubmitting }) => {
+                setRegError("");
+                try {
+                  const response = await api.post(API_ROUTES.auth.register, {
+                    full_name: values.full_name,
+                    email: values.email,
+                    dob: values.dob,
+                    gender: values.gender,
+                    country_code: values.country_code,
+                    phone_number: values.phone_number,
+                    password: values.password,
+                  });
+                  localStorage.setItem(
+                    "refresh_token",
+                    response.data.refresh_token,
+                  );
+                  await checkAuth();
+                  navigate("/welcome-patient");
+                } catch (err) {
+                  setRegError(
+                    err.response?.data?.detail ||
+                      "Registration failed. Please try again.",
+                  );
+                } finally {
+                  setSubmitting(false);
+                }
+              }}
+            >
+              {({
+                errors,
+                touched,
+                values,
+                isSubmitting,
+                handleChange,
+                handleBlur,
+                setFieldValue,
+                setFieldTouched,
+                validateField,
+              }) => {
+                const selectedCountry = COUNTRY_CODES.find(
+                  (item) => item.code === values.country_code,
+                );
+                const phoneHasInvalidChars = /[^0-9-]/.test(
+                  values.phone_number || "",
+                );
+                const showPhoneError = Boolean(
+                  errors.phone_number &&
+                  touched.phone_number &&
+                  (focusedField !== "phone_number" || phoneHasInvalidChars),
+                );
+
+                const label = (text) => (
+                  <label
+                    className="block text-slate-600 mb-1"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    {text}
+                  </label>
+                );
+
+                const errMsg = (msg) => (
+                  <p
+                    className="flex items-center gap-1 text-red-500 text-[11px] mt-1.5"
+                    style={{ fontWeight: 500 }}
+                  >
+                    <XCircle size={10} /> {msg}
+                  </p>
+                );
+
+                const okMsg = (msg) => (
+                  <p
+                    className="flex items-center gap-1 text-emerald-600 text-[11px] mt-1.5"
+                    style={{ fontWeight: 500 }}
+                  >
+                    <CheckCircle2 size={10} /> {msg}
+                  </p>
+                );
+
+                return (
+                  <Form className="space-y-2.5">
+                    {/* Row 1: Name + Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        {label("Full Name")}
                         <input
                           name="full_name"
                           type="text"
                           placeholder="John Doe"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.full_name && touched.full_name && focusedField !== "full_name"
-                            ? "border-red-300 bg-red-50"
-                            : !errors.full_name && values.full_name
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          className={inputBase}
+                          style={fieldStyle(
+                            errors.full_name &&
+                              touched.full_name &&
+                              focusedField !== "full_name",
+                            !errors.full_name && values.full_name,
+                            focusedField === "full_name",
+                          )}
                           value={values.full_name}
                           onChange={handleChange}
                           onFocus={() => setFocusedField("full_name")}
@@ -320,28 +393,27 @@ export default function Register({ togglePage }) {
                           }}
                         />
                         {errors.full_name &&
-                          touched.full_name &&
-                          focusedField !== "full_name" ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.full_name}
-                          </p>
+                        touched.full_name &&
+                        focusedField !== "full_name" ? (
+                          errMsg(errors.full_name)
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
-
-                      <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Email Address</label>
+                      <div>
+                        {label("Email Address")}
                         <input
                           name="email"
                           type="email"
-                          placeholder="your@email.com"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.email && touched.email && focusedField !== "email"
-                            ? "border-red-300 bg-red-50"
-                            : !errors.email && values.email
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          placeholder="you@example.com"
+                          className={inputBase}
+                          style={fieldStyle(
+                            errors.email &&
+                              touched.email &&
+                              focusedField !== "email",
+                            !errors.email && values.email,
+                            focusedField === "email",
+                          )}
                           value={values.email}
                           onChange={handleChange}
                           onFocus={() => setFocusedField("email")}
@@ -351,39 +423,39 @@ export default function Register({ togglePage }) {
                           }}
                         />
                         {errors.email &&
-                          touched.email &&
-                          focusedField !== "email" ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.email}
-                          </p>
+                        touched.email &&
+                        focusedField !== "email" ? (
+                          errMsg(errors.email)
                         ) : !errors.email &&
                           values.email &&
                           focusedField !== "email" ? (
-                          <p className="text-xs font-semibold text-emerald-600 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <CheckCircle2 size={11} /> Valid email
-                          </p>
+                          okMsg("Valid email")
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
                     </div>
 
-                    {/* Row 2 */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-0 sm:gap-3">
-                      <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Gender</label>
+                    {/* Row 2: Gender + DOB */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        {label("Gender")}
                         <Field
                           as="select"
                           name="gender"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all appearance-none bg-no-repeat bg-right-3 pr-10 ${errors.gender && touched.gender && focusedField !== "gender"
-                            ? "border-red-300 bg-red-50"
-                            : !errors.gender && values.gender
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          className={inputBase + " appearance-none"}
                           style={{
+                            ...fieldStyle(
+                              errors.gender &&
+                                touched.gender &&
+                                focusedField !== "gender",
+                              !errors.gender && values.gender,
+                              focusedField === "gender",
+                            ),
                             backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
-                            backgroundPosition: "right 14px center",
+                            backgroundRepeat: "no-repeat",
+                            backgroundPosition: "right 12px center",
+                            paddingRight: "36px",
                           }}
                           onFocus={() => setFocusedField("gender")}
                           onBlur={(e) => {
@@ -391,33 +463,30 @@ export default function Register({ togglePage }) {
                             handleBlur(e);
                           }}
                         >
-                          <option value="">Select Gender</option>
+                          <option value="">Select gender</option>
                           <option value="male">Male</option>
                           <option value="female">Female</option>
                           <option value="other">Other</option>
                         </Field>
                         {errors.gender &&
-                          touched.gender &&
-                          focusedField !== "gender" ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.gender}
-                          </p>
+                        touched.gender &&
+                        focusedField !== "gender" ? (
+                          errMsg(errors.gender)
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
-
-                      <div className="mb-2.5">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Date of Birth</label>
+                      <div>
+                        {label("Date of Birth")}
                         <input
                           name="dob"
                           type="date"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.dob && touched.dob && focusedField !== "dob"
-                            ? "border-red-300 bg-red-50"
-                            : !errors.dob && values.dob
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          className={inputBase}
+                          style={fieldStyle(
+                            errors.dob && touched.dob && focusedField !== "dob",
+                            !errors.dob && values.dob,
+                            focusedField === "dob",
+                          )}
                           value={values.dob}
                           onChange={handleChange}
                           onFocus={() => setFocusedField("dob")}
@@ -427,24 +496,22 @@ export default function Register({ togglePage }) {
                           }}
                         />
                         {errors.dob && touched.dob && focusedField !== "dob" ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.dob}
-                          </p>
+                          errMsg(errors.dob)
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
                     </div>
 
-                    {/* Row 3 - Phone Number */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 sm:gap-3">
-                      <div className="mb-2.5 relative">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Country Code</label>
+                    {/* Row 3: Country code + Phone */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="relative">
+                        {label("Country Code")}
                         <div className="relative">
                           {selectedCountry?.iso && (
                             <img
                               src={`https://flagcdn.com/w40/${selectedCountry.iso.toLowerCase()}.png`}
-                              alt={`${selectedCountry.country} flag`}
+                              alt=""
                               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-3 rounded-sm object-cover border border-slate-200"
                               loading="lazy"
                             />
@@ -452,84 +519,112 @@ export default function Register({ togglePage }) {
                           <input
                             type="text"
                             name="country_code"
-                            placeholder="Search or type +91"
-                            className={`w-full pl-9 pr-3 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm placeholder:text-xs text-slate-900 outline-none transition-all ${errors.country_code && touched.country_code && focusedField !== "country_code"
-                              ? "border-red-300 bg-red-50"
-                              : !errors.country_code && values.country_code
-                                ? "border-emerald-400 bg-emerald-50"
-                                : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                              }`}
+                            placeholder="+91"
+                            className={inputBase + " pl-9"}
+                            style={fieldStyle(
+                              errors.country_code &&
+                                touched.country_code &&
+                                focusedField !== "country_code",
+                              !errors.country_code && values.country_code,
+                              focusedField === "country_code",
+                            )}
                             value={values.country_code}
-                            onChange={(e) => handleCountryCodeChange(e.target.value, setFieldValue)}
+                            onChange={(e) =>
+                              handleCountryCodeChange(
+                                e.target.value,
+                                setFieldValue,
+                              )
+                            }
                             onFocus={() => {
                               setFocusedField("country_code");
                               if (values.country_code) {
                                 const filtered = COUNTRY_CODES.filter(
                                   (item) =>
-                                    item.code.toLowerCase().includes(values.country_code.toLowerCase()) ||
-                                    item.country.toLowerCase().includes(values.country_code.toLowerCase())
+                                    item.code
+                                      .toLowerCase()
+                                      .includes(
+                                        values.country_code.toLowerCase(),
+                                      ) ||
+                                    item.country
+                                      .toLowerCase()
+                                      .includes(
+                                        values.country_code.toLowerCase(),
+                                      ),
                                 );
                                 setCountryCodeSuggestions(filtered);
                                 setShowCountrySuggestions(true);
                               }
                             }}
-                            onBlur={(e) => {
-                              handleCountryCodeBlur(values.country_code, setFieldValue, setFieldTouched, validateField);
-                            }}
+                            onBlur={() =>
+                              handleCountryCodeBlur(
+                                values.country_code,
+                                setFieldValue,
+                                setFieldTouched,
+                                validateField,
+                              )
+                            }
                           />
                         </div>
 
-                        {/* Suggestions Dropdown */}
-                        {showCountrySuggestions && countryCodeSuggestions.length > 0 && (
-                          <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-2xl shadow-lg z-10 max-h-48 overflow-y-auto">
-                            {countryCodeSuggestions.map((item) => (
-                              <button
-                                key={item.code}
-                                type="button"
-                                onMouseDown={(e) => {
-                                  e.preventDefault();
-                                  handleSelectCountry(item.code, setFieldValue);
-                                }}
-                                className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center justify-between"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <img
-                                    src={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png`}
-                                    alt={`${item.country} flag`}
-                                    className="w-5 h-3.5 rounded-sm object-cover border border-slate-200"
-                                    loading="lazy"
-                                  />
-                                  <span className="font-semibold text-slate-900">{item.code}</span>
-                                </div>
-                                <span className="text-xs text-slate-500">{item.country}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {showCountrySuggestions &&
+                          countryCodeSuggestions.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg z-20 max-h-44 overflow-y-auto">
+                              {countryCodeSuggestions.map((item) => (
+                                <button
+                                  key={item.code}
+                                  type="button"
+                                  onMouseDown={(e) => {
+                                    e.preventDefault();
+                                    handleSelectCountry(
+                                      item.code,
+                                      setFieldValue,
+                                    );
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 hover:bg-slate-50 border-b border-slate-100 last:border-b-0 transition-colors flex items-center justify-between"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <img
+                                      src={`https://flagcdn.com/w40/${item.iso.toLowerCase()}.png`}
+                                      alt=""
+                                      className="w-4 h-3 rounded-sm object-cover border border-slate-200"
+                                      loading="lazy"
+                                    />
+                                    <span
+                                      className="text-slate-900 text-[13px]"
+                                      style={{ fontWeight: 500 }}
+                                    >
+                                      {item.code}
+                                    </span>
+                                  </div>
+                                  <span className="text-slate-500 text-[12px]">
+                                    {item.country}
+                                  </span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
 
                         {errors.country_code &&
-                          touched.country_code &&
-                          focusedField !== "country_code" ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.country_code}
-                          </p>
+                        touched.country_code &&
+                        focusedField !== "country_code" ? (
+                          errMsg(errors.country_code)
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
 
-                      <div className="mb-2.5 sm:col-span-2">
-                        <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Phone Number</label>
+                      <div className="sm:col-span-2">
+                        {label("Phone Number")}
                         <input
                           name="phone_number"
                           type="tel"
                           placeholder="9876543210"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${showPhoneError
-                            ? "border-red-300 bg-red-50"
-                            : !errors.phone_number && values.phone_number
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          className={inputBase}
+                          style={fieldStyle(
+                            showPhoneError,
+                            !errors.phone_number && values.phone_number,
+                            focusedField === "phone_number",
+                          )}
                           value={values.phone_number}
                           onChange={(e) => {
                             setFieldValue("phone_number", e.target.value);
@@ -543,17 +638,13 @@ export default function Register({ togglePage }) {
                           }}
                         />
                         {showPhoneError ? (
-                          <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <XCircle size={11} /> {errors.phone_number}
-                          </p>
+                          errMsg(errors.phone_number)
                         ) : !errors.phone_number &&
                           values.phone_number &&
                           focusedField !== "phone_number" ? (
-                          <p className="text-xs font-semibold text-emerald-600 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                            <CheckCircle2 size={11} /> Valid phone number
-                          </p>
+                          okMsg("Valid phone number")
                         ) : (
-                          <div className="min-h-4" />
+                          <div className="h-3" />
                         )}
                       </div>
                     </div>
@@ -563,26 +654,25 @@ export default function Register({ togglePage }) {
                       label="Password"
                       name="password"
                       placeholder="••••••••"
-                      className="mb-3"
                     />
 
                     {/* Confirm Password */}
-                    <div className="mb-2.5">
-                      <label className="block text-xs font-black text-slate-600 mb-1.5 uppercase tracking-wider">Confirm Password</label>
+                    <div>
+                      {label("Confirm Password")}
                       <div className="relative">
                         <input
                           name="confirmPassword"
                           type={showConfirm ? "text" : "password"}
                           placeholder="••••••••"
-                          className={`w-full px-4 py-2.5 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all pr-11 ${values.confirmPassword &&
-                            values.password !== values.confirmPassword &&
-                            focusedField !== "confirmPassword"
-                            ? "border-red-300 bg-red-50"
-                            : values.confirmPassword &&
-                              values.password === values.confirmPassword
-                              ? "border-emerald-400 bg-emerald-50"
-                              : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                            }`}
+                          className={inputBase + " pr-11"}
+                          style={fieldStyle(
+                            values.confirmPassword &&
+                              values.password !== values.confirmPassword &&
+                              focusedField !== "confirmPassword",
+                            values.confirmPassword &&
+                              values.password === values.confirmPassword,
+                            focusedField === "confirmPassword",
+                          )}
                           value={values.confirmPassword}
                           onChange={handleChange}
                           onFocus={() => setFocusedField("confirmPassword")}
@@ -593,7 +683,7 @@ export default function Register({ togglePage }) {
                         />
                         <button
                           type="button"
-                          className="absolute right-3.5 top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-slate-400 flex items-center p-0.5 transition-colors hover:text-slate-900"
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
                           onClick={() => setShowConfirm((p) => !p)}
                         >
                           {showConfirm ? (
@@ -604,56 +694,68 @@ export default function Register({ togglePage }) {
                         </button>
                       </div>
                       {values.confirmPassword &&
-                        values.password !== values.confirmPassword &&
-                        focusedField !== "confirmPassword" ? (
-                        <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                          <XCircle size={11} /> Passwords do not match
-                        </p>
+                      values.password !== values.confirmPassword &&
+                      focusedField !== "confirmPassword" ? (
+                        errMsg("Passwords do not match")
                       ) : values.confirmPassword &&
                         values.password === values.confirmPassword ? (
-                        <p className="text-xs font-semibold text-emerald-600 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                          <CheckCircle2 size={11} /> Passwords match
-                        </p>
+                        okMsg("Passwords match")
                       ) : (
-                        <div className="min-h-4" />
+                        <div className="h-3" />
                       )}
                     </div>
 
                     <button
                       type="submit"
-                      className="w-full bg-slate-900 text-white border-none rounded-3xl py-3.5 px-5 font-sans text-base font-black cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-slate-800 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed mt-1"
                       disabled={isSubmitting}
+                      className="w-full flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-white transition-all disabled:opacity-50 text-[14px]"
+                      style={{ backgroundColor: "#0f172a", fontWeight: 600 }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#1e293b")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.backgroundColor = "#0f172a")
+                      }
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="spinner" /> Creating Account…
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Creating account…
                         </>
                       ) : (
                         <>
-                          <UserPlus size={17} /> Create Account{" "}
-                          <ArrowRight size={15} />
+                          <UserPlus size={16} /> Create Account{" "}
+                          <ArrowRight size={14} />
                         </>
                       )}
                     </button>
 
-                    <p className="text-center text-sm text-slate-500 font-normal mt-3">
+                    <p
+                      className="text-center text-slate-500 text-[13px]"
+                      style={{ fontWeight: 400 }}
+                    >
                       Already have an account?{" "}
                       <button
                         type="button"
-                        className="text-slate-900 font-black bg-none border-none cursor-pointer font-sans text-sm underline underline-offset-1 hover:text-slate-600"
+                        className="text-slate-900 underline underline-offset-2 hover:text-slate-600 transition-colors"
+                        style={{
+                          fontWeight: 600,
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                        }}
                         onClick={() => handleNavigation("/login")}
                       >
                         Sign in
                       </button>
                     </p>
                   </Form>
-                  );
-                }}
-              </Formik>
-            </div>
+                );
+              }}
+            </Formik>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

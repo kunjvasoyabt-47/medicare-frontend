@@ -1,4 +1,4 @@
-import  { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, Users } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
@@ -10,8 +10,8 @@ import { API_ROUTES } from "../../lib/routes";
 import SystemLoader from "../../components/SystemLoader";
 
 const SORT_OPTIONS = [
-  { value: "asc", label: "Sort: A → Z" },
-  { value: "desc", label: "Sort: Z → A" },
+  { value: "asc", label: "A → Z" },
+  { value: "desc", label: "Z → A" },
 ];
 
 const PAGE_SIZE = 7;
@@ -19,7 +19,6 @@ const PAGE_SIZE = 7;
 export default function AdminPatients() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-
   const [patients, setPatients] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -54,27 +53,23 @@ export default function AdminPatients() {
         const list = Array.isArray(payload)
           ? payload
           : payload.items || payload.patients || payload.data || [];
-
         const hasServerPagination =
           !Array.isArray(payload) &&
           payload.items &&
           (payload.total != null ||
             payload.count != null ||
             payload.pagination?.total != null);
-
         if (hasServerPagination) {
           const totalFromApi = Number(
             payload.total ?? payload.count ?? payload.pagination?.total ?? 0,
           );
           setPatients(list);
           setTotal(Number.isFinite(totalFromApi) ? totalFromApi : 0);
-          return;
+        } else {
+          const start = (page - 1) * PAGE_SIZE;
+          setPatients(list.slice(start, start + PAGE_SIZE));
+          setTotal(list.length);
         }
-
-        const start = (page - 1) * PAGE_SIZE;
-        const end = start + PAGE_SIZE;
-        setPatients(list.slice(start, end));
-        setTotal(list.length);
       })
       .catch(console.error)
       .finally(() => {
@@ -95,7 +90,7 @@ export default function AdminPatients() {
         <div className="max-w-6xl mx-auto">
           <SystemLoader
             label="Loading Patients"
-            sublabel="Preparing patient records and status"
+            sublabel="Preparing patient records"
             className="min-h-[60vh]"
           />
         </div>
@@ -106,22 +101,30 @@ export default function AdminPatients() {
   return (
     <AdminLayout>
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-6">
-          <h1 className="text-[28px] font-black text-slate-900 tracking-tight flex items-center gap-3">
-            <Users size={26} className="text-slate-400" />
+          <h1
+            className="text-slate-900 text-[22px] flex items-center gap-2.5"
+            style={{ fontWeight: 700, letterSpacing: "-0.02em" }}
+          >
+            <Users size={20} className="text-slate-400" />
             Patients
           </h1>
-          <p className="text-slate-400 font-medium mt-1 text-[14px]">
+          <p
+            className="text-slate-500 text-[13px] mt-1"
+            style={{ fontWeight: 400 }}
+          >
             Select a patient to view details or manage discharge
           </p>
         </div>
 
-        {/* ── Unified Toolbar ── */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-3 mb-5">
+        {/* Toolbar */}
+        <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4">
           <div className="flex flex-col gap-2.5 sm:flex-row sm:items-end">
             <div className="flex-1 min-w-0">
-              <label className="mb-1 block text-[10px] text-slate-500 font-black uppercase tracking-widest leading-none">
+              <label
+                className="block text-slate-500 mb-1 text-[10px] uppercase tracking-widest"
+                style={{ fontWeight: 600 }}
+              >
                 Search
               </label>
               <SearchBar
@@ -131,9 +134,7 @@ export default function AdminPatients() {
                 debounceMs={400}
               />
             </div>
-
-            <div className="hidden sm:block w-px self-stretch bg-slate-100 my-0.5" />
-
+            <div className="hidden sm:block w-px self-stretch bg-slate-100" />
             <FilterBar
               filters={[
                 {
@@ -150,38 +151,40 @@ export default function AdminPatients() {
         </div>
 
         {/* Table */}
-        <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-50">
-                  <th className="text-left py-4 px-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">
-                    Patient
-                  </th>
-                  <th className="text-left py-4 px-4 text-[11px] font-black text-slate-400 uppercase tracking-widest hidden sm:table-cell">
-                    ID
-                  </th>
-                  <th className="text-left py-4 px-4 text-[11px] font-black text-slate-400 uppercase tracking-widest hidden md:table-cell">
-                    Status
-                  </th>
-                  <th className="py-4 px-4 w-16" />
+                <tr className="border-b border-slate-100">
+                  {["Patient", "ID", "Status", ""].map((h, i) => (
+                    <th
+                      key={i}
+                      className={`text-left py-3 px-5 text-[10px] text-slate-400 uppercase tracking-widest ${i === 1 ? "hidden sm:table-cell" : ""} ${i === 2 ? "hidden md:table-cell" : ""}`}
+                      style={{ fontWeight: 600 }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="py-16 text-center">
+                    <td colSpan={4} className="py-14 text-center">
                       <SystemLoader compact label="Refreshing patients" />
                     </td>
                   </tr>
                 ) : patients.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="py-16 text-center">
+                    <td colSpan={4} className="py-14 text-center">
                       <Users
-                        size={36}
+                        size={32}
                         className="text-slate-200 mx-auto mb-3"
                       />
-                      <p className="text-slate-400 font-semibold text-[14px]">
+                      <p
+                        className="text-slate-400 text-[13px]"
+                        style={{ fontWeight: 500 }}
+                      >
                         {search
                           ? "No patients match your search"
                           : "No patients found"}
@@ -192,45 +195,63 @@ export default function AdminPatients() {
                   patients.map((patient) => (
                     <tr
                       key={patient.id}
-                      className="hover:bg-slate-50/70 cursor-pointer transition-colors group"
+                      className="hover:bg-slate-50 cursor-pointer transition-colors group"
                       onClick={() => navigate(`/admin/patient/${patient.id}`)}
                     >
-                      <td className="py-4 px-6">
+                      <td className="py-3.5 px-5">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-[#0f172a] text-white flex items-center justify-center font-black text-[14px] uppercase shrink-0 shadow-sm">
+                          <div
+                            className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[12px] uppercase shrink-0"
+                            style={{ fontWeight: 600 }}
+                          >
                             {patient.full_name?.charAt(0) || "P"}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-bold text-slate-900 text-[14px] truncate">
+                            <p
+                              className="text-slate-900 text-[13px] truncate"
+                              style={{ fontWeight: 500 }}
+                            >
                               {patient.full_name}
                             </p>
-                            <p className="text-slate-400 text-[12px] truncate">
+                            <p
+                              className="text-slate-400 text-[12px] truncate"
+                              style={{ fontWeight: 400 }}
+                            >
                               {patient.email}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="py-4 px-4 hidden sm:table-cell">
-                        <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-lg font-bold text-[12px]">
+                      <td className="py-3.5 px-5 hidden sm:table-cell">
+                        <span
+                          className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-[11px]"
+                          style={{ fontWeight: 500 }}
+                        >
                           #{String(patient.id).padStart(4, "0")}
                         </span>
                       </td>
-                      <td className="py-4 px-4 hidden md:table-cell">
+                      <td className="py-3.5 px-5 hidden md:table-cell">
                         {patient.discharge_date ? (
-                          <span className="flex items-center gap-1.5 text-slate-500 font-semibold text-[13px]">
-                            <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                          <span
+                            className="flex items-center gap-1.5 text-slate-500 text-[12px]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />{" "}
                             Discharged
                           </span>
                         ) : (
-                          <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-[13px]">
-                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                          <span
+                            className="flex items-center gap-1.5 text-emerald-600 text-[12px]"
+                            style={{ fontWeight: 500 }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />{" "}
                             Active
                           </span>
                         )}
                       </td>
-                      <td className="py-4 px-4 text-right">
-                        <button className="p-2 bg-slate-50 text-slate-400 rounded-xl group-hover:bg-[#0f172a] group-hover:text-white transition-all">
-                          <Eye size={16} />
+                      <td className="py-3.5 px-5 text-right">
+                        <button className="p-1.5 bg-slate-100 text-slate-500 rounded-lg group-hover:bg-slate-900 group-hover:text-white transition-all">
+                          <Eye size={14} />
                         </button>
                       </td>
                     </tr>
@@ -240,7 +261,7 @@ export default function AdminPatients() {
             </table>
           </div>
 
-          <div className="px-6 pb-5">
+          <div className="px-5 pb-4">
             <Pagination
               currentPage={page}
               totalPages={totalPages}

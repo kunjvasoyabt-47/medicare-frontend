@@ -12,9 +12,8 @@ export default function PatientNavbar({ sidebarOpen, onMenuToggle }) {
 
   useEffect(() => {
     const handle = (e) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
         setDropdownOpen(false);
-      }
     };
     document.addEventListener("mousedown", handle);
     return () => document.removeEventListener("mousedown", handle);
@@ -36,79 +35,94 @@ export default function PatientNavbar({ sidebarOpen, onMenuToggle }) {
 
   return (
     <header
-      className={`fixed top-0 right-0 z-30 bg-white border-b border-slate-100 shadow-sm h-16
-        flex items-center px-5 gap-3 transition-all duration-300 ease-in-out
-        left-0 font-sans ${sidebarOpen ? "lg:left-64" : "lg:left-0"}`}
+      className={`fixed top-0 right-0 z-30 bg-white border-b border-slate-200 h-14
+        flex items-center px-4 gap-3 transition-all duration-300 ease-in-out
+        left-0 ${sidebarOpen ? "lg:left-64" : "lg:left-0"}`}
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
     >
-      {/* Menu toggle for all screen sizes */}
       <button
         onClick={onMenuToggle}
-        className="p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-all"
+        className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
         aria-label="Toggle sidebar"
       >
-        {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+        {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
       </button>
 
-      {/* Brand */}
-      <div className="flex items-center gap-2.5">
-        <div className="bg-[#111111] p-1.5 rounded-xl text-white shadow-md">
-          <Activity size={20} />
+      <div className="flex items-center gap-2">
+        <div className="bg-slate-900 p-1.5 rounded-lg text-white">
+          <Activity size={16} />
         </div>
-        <span className="text-[#111111] font-black text-[18px] tracking-tight hidden sm:block">
+        <span
+          className="text-slate-900 text-[15px] hidden sm:block"
+          style={{ fontWeight: 600 }}
+        >
           Medicare
         </span>
       </div>
 
       <div className="flex-1" />
 
-      {/* Profile area */}
       <div className="relative" ref={dropdownRef}>
         <button
           onClick={() => setDropdownOpen((o) => !o)}
-          className="flex items-center gap-2.5 px-3 py-2 rounded-2xl border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition-all"
-          aria-label="User menu"
-          aria-expanded={dropdownOpen}
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all"
         >
-          <div className="w-7 h-7 rounded-xl bg-[#111111] text-white flex items-center justify-center font-black text-[12px] uppercase shrink-0">
+          <div
+            className="w-6 h-6 rounded-md bg-slate-900 text-white flex items-center justify-center text-[11px] uppercase shrink-0"
+            style={{ fontWeight: 600 }}
+          >
             {user?.email?.charAt(0) || "P"}
           </div>
           <div className="hidden sm:block text-left min-w-0">
-            <p className="text-[11px] font-black text-slate-800 leading-tight truncate max-w-[120px]">
+            <p
+              className="text-slate-800 text-[12px] leading-tight truncate max-w-[110px]"
+              style={{ fontWeight: 600 }}
+            >
               {user?.full_name}
             </p>
-            <p className="text-[11px] font-medium text-slate-500 truncate max-w-[120px]">
+            <p
+              className="text-slate-500 text-[11px] truncate max-w-[110px]"
+              style={{ fontWeight: 400 }}
+            >
               {user?.email}
             </p>
           </div>
         </button>
 
         {dropdownOpen && (
-          <div className="absolute right-0 top-12 w-64 bg-white border border-slate-200 rounded-2xl shadow-2xl shadow-slate-200/60 z-50 overflow-hidden">
+          <div className="absolute right-0 top-10 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
             <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-              <p className="text-slate-900 font-black text-[15px] truncate">
+              <p
+                className="text-slate-900 text-[14px] truncate"
+                style={{ fontWeight: 600 }}
+              >
                 {user?.full_name}
               </p>
-              <p className="text-slate-500 text-[12px] font-medium truncate mt-0.5">
+              <p
+                className="text-slate-500 text-[12px] truncate"
+                style={{ fontWeight: 400 }}
+              >
                 {user?.email}
               </p>
             </div>
-            <div className="p-2">
+            <div className="p-1.5">
               <button
                 onClick={goToProfile}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-700 hover:bg-slate-50 transition-all text-[14px] font-bold"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-all text-[13px]"
+                style={{ fontWeight: 500 }}
               >
-                <UserCircle size={16} className="text-slate-400" />
-                Edit Profile
+                <UserCircle size={14} className="text-slate-400" /> Edit Profile
               </button>
               <button
                 onClick={handleLogout}
                 disabled={logoutLoading}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-600 hover:bg-red-50 transition-all text-[14px] font-bold disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-all text-[13px] disabled:opacity-60"
+                style={{ fontWeight: 500 }}
               >
                 {logoutLoading ? (
-                  <Loader2 size={16} className="animate-spin" />
+                  <Loader2 size={14} className="animate-spin" />
                 ) : (
-                  <LogOut size={16} />
+                  <LogOut size={14} />
                 )}
                 {logoutLoading ? "Logging out…" : "Logout"}
               </button>

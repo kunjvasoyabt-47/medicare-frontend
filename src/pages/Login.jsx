@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Formik, Form } from "formik";
-import {
-  AlertCircle,
-  Activity,
-  Eye,
-  EyeOff,
-  ArrowRight,
-} from "lucide-react";
+import { AlertCircle, Activity, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { loginSchema } from "../lib/validation";
 import api from "../lib/axios";
 import { useAuth } from "../context/AuthContext";
@@ -36,7 +30,7 @@ export default function Login({ togglePage }) {
     } catch (err) {
       setError(
         err.response?.data?.detail ||
-        "Incorrect email or password. Please try again.",
+          "Incorrect email or password. Please try again.",
       );
     } finally {
       setSubmitting(false);
@@ -44,183 +38,312 @@ export default function Login({ togglePage }) {
   };
 
   return (
-    <>
+    <div
+      className="h-screen flex overflow-hidden"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
+      {/* Left Panel */}
+      <div
+        className="hidden lg:flex lg:w-[44%] flex-col justify-between p-12 flex-shrink-0 relative overflow-hidden"
+        style={{ backgroundColor: "#0f172a" }}
+      >
+        {/* Subtle grid texture */}
+        <div
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage:
+              "linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)",
+            backgroundSize: "48px 48px",
+          }}
+        />
 
-      <div className="min-h-screen bg-slate-100 flex">
-        {/* Left panel */}
-        <div className="login-panel hidden lg:flex lg:w-[45%] bg-slate-900 relative overflow-hidden flex-col justify-between p-14 flex-shrink-0">
-          <div className="relative z-10">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-lg">
-                <Activity size={20} className="text-slate-900" />
-              </div>
-              <span className="text-white font-black text-xl tracking-tight">Medicare</span>
+        <div className="relative z-10">
+          {/* Logo */}
+          <div className="flex items-center gap-3 mb-12">
+            <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center shadow">
+              <Activity size={18} className="text-slate-900" />
             </div>
-
-            <div className="w-10 h-0.5 bg-white opacity-15 mb-4" />
-            <h1 className="text-white text-5xl font-black leading-tight tracking-tight mb-4 panel-heading">
-              Your health,
-              <br />
-              <span>always with you.</span>
-            </h1>
-            <p className="text-white/45 text-base leading-relaxed max-w-xs">
-              Sign in to access your health dashboard, medical records, and care
-              history — all in one place.
-            </p>
+            <span
+              className="text-white text-[17px] tracking-tight"
+              style={{ fontWeight: 600 }}
+            >
+              Medicare
+            </span>
           </div>
 
+          {/* Headline */}
+          <div>
+            <p
+              className="text-slate-500 text-[13px] uppercase tracking-widest mb-4"
+              style={{ fontWeight: 500, letterSpacing: "0.12em" }}
+            >
+              Patient Portal
+            </p>
+            <h1
+              className="text-white leading-tight mb-5"
+              style={{
+                fontFamily: "'Georgia', 'Times New Roman', serif",
+                fontSize: "clamp(32px, 3.5vw, 48px)",
+                fontWeight: 400,
+                lineHeight: 1.15,
+              }}
+            >
+              Your health records,
+              <br />
+              <em>always within reach.</em>
+            </h1>
+            <p
+              className="text-slate-400 leading-relaxed max-w-xs"
+              style={{ fontSize: "15px", fontWeight: 400, lineHeight: 1.7 }}
+            >
+              Securely access your discharge summaries, medical reports, and
+              care history — all in one place.
+            </p>
+          </div>
         </div>
 
-        {/* Right form */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-10 overflow-y-auto bg-white">
-          <div className="w-full max-w-sm">
-            {/* Mobile brand */}
-            <div className="flex lg:hidden items-center gap-2.5 mb-9">
-              <div className="w-9 h-9 bg-slate-900 rounded-2xl flex items-center justify-center">
-                <Activity size={18} className="text-white" />
+        {/* Features */}
+        <div className="relative z-10">
+          <div className="space-y-3 mb-10">
+            {[
+              "Complete discharge documentation",
+              "Prescription and billing history",
+              "Private and HIPAA-compliant",
+            ].map((item, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-slate-500 shrink-0" />
+                <p
+                  className="text-slate-400 text-[13px]"
+                  style={{ fontWeight: 400 }}
+                >
+                  {item}
+                </p>
               </div>
-              <span className="font-black text-lg text-slate-900 tracking-tight">Medicare</span>
-            </div>
-
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-1.5">Login</h1>
-            <p className="text-sm text-slate-500 font-normal mb-7">
-              Enter your email and password to access your account
-            </p>
-
-            {error && (
-              <div className="flex items-start gap-2.5 bg-red-50 border border-red-300 rounded-2xl p-3.5 text-red-600 text-sm font-medium mb-5 leading-relaxed">
-                <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
-              </div>
-            )}
-
-            <Formik
-              initialValues={{ email: "", password: "" }}
-              validationSchema={loginSchema}
-              validateOnChange={false}
-              validateOnBlur={true}
-              onSubmit={handleLogin}
-            >
-              {({
-                errors,
-                touched,
-                values,
-                isSubmitting,
-                handleChange,
-                handleBlur,
-              }) => (
-                <Form>
-                  {/* Email */}
-                  <div className="mb-5">
-                    <label className="block text-xs font-black text-slate-600 mb-2 uppercase tracking-wider">Email Address</label>
-                    <div className="relative mb-1.5">
-                      <input
-                        name="email"
-                        type="email"
-                        placeholder="you@example.com"
-                        className={`w-full px-4 py-3 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all ${errors.email && touched.email && focusedField !== "email"
-                          ? "border-red-300 bg-red-50"
-                          : !errors.email && values.email
-                            ? "border-emerald-400 bg-emerald-50"
-                            : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                          }`}
-                        value={values.email}
-                        onChange={handleChange}
-                        onFocus={() => setFocusedField("email")}
-                        onBlur={(e) => {
-                          setFocusedField("");
-                          handleBlur(e);
-                        }}
-                      />
-                    </div>
-                    {errors.email &&
-                      touched.email &&
-                      focusedField !== "email" ? (
-                      <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                        <AlertCircle size={11} /> {errors.email}
-                      </p>
-                    ) : (
-                      <div className="min-h-5" />
-                    )}
-                  </div>
-
-                  {/* Password */}
-                  <div className="mb-5">
-                    <label className="block text-xs font-black text-slate-600 mb-2 uppercase tracking-wider">Password</label>
-                    <div className="relative mb-1.5">
-                      <input
-                        name="password"
-                        type={showPassword ? "text" : "password"}
-                        placeholder="Enter your password"
-                        className={`w-full px-4 py-3 rounded-3xl border-2 bg-slate-50 font-sans text-sm text-slate-900 outline-none transition-all pr-11 ${errors.password && touched.password && focusedField !== "password"
-                          ? "border-red-300 bg-red-50"
-                          : "border-slate-200 focus:border-slate-900 focus:bg-white"
-                          }`}
-                        value={values.password}
-                        onChange={handleChange}
-                        onFocus={() => setFocusedField("password")}
-                        onBlur={(e) => {
-                          setFocusedField("");
-                          handleBlur(e);
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="absolute right-3.5 top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer text-slate-400 flex items-center p-0.5 transition-colors hover:text-slate-900"
-                        onClick={() => setShowPassword((p) => !p)}
-                      >
-                        {showPassword ? (
-                          <EyeOff size={16} />
-                        ) : (
-                          <Eye size={16} />
-                        )}
-                      </button>
-                    </div>
-                    {errors.password &&
-                      touched.password &&
-                      focusedField !== "password" ? (
-                      <p className="text-xs font-semibold text-red-500 mt-1 ml-0.5 flex items-center gap-1 min-h-4">
-                        <AlertCircle size={11} /> {errors.password}
-                      </p>
-                    ) : (
-                      <div className="min-h-5" />
-                    )}
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-slate-900 text-white border-none rounded-3xl py-4 px-5 font-sans text-base font-black cursor-pointer flex items-center justify-center gap-2 transition-all hover:bg-slate-800 active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <div className="spinner" /> Signing in…
-                      </>
-                    ) : (
-                      <>
-                        Log In <ArrowRight size={16} />
-                      </>
-                    )}
-                  </button>
-
-                  <div className="text-center text-sm text-slate-500 font-normal mt-4.5">
-                    Don't have an account?{" "}
-                    <button
-                      type="button"
-                      className="text-slate-900 font-black bg-none border-none cursor-pointer font-sans text-sm underline underline-offset-1 hover:text-slate-600"
-                      onClick={() => handleNavigation("/register")}
-                    >
-                      Create a free account
-                    </button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-
-            <p className="text-center text-slate-400 text-xs mt-8">© 2026 Medicare · Secure & Private</p>
+            ))}
           </div>
+          <p className="text-slate-600 text-[12px]" style={{ fontWeight: 400 }}>
+            © 2026 Medicare · Secure & Private
+          </p>
         </div>
       </div>
-    </>
+
+      {/* Right Form Panel */}
+      <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-white overflow-y-auto min-h-0">
+        <div className="w-full max-w-[380px]">
+          {/* Mobile Brand */}
+          <div className="flex lg:hidden items-center gap-2.5 mb-7">
+            <div className="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center">
+              <Activity size={16} className="text-white" />
+            </div>
+            <span
+              className="text-slate-900 text-[16px]"
+              style={{ fontWeight: 600 }}
+            >
+              Medicare
+            </span>
+          </div>
+
+          <h2
+            className="text-slate-900 mb-1"
+            style={{
+              fontSize: "24px",
+              fontWeight: 700,
+              letterSpacing: "-0.02em",
+            }}
+          >
+            Sign in
+          </h2>
+          <p
+            className="text-slate-500 mb-6"
+            style={{ fontSize: "13px", fontWeight: 400 }}
+          >
+            Enter your credentials to access your account
+          </p>
+
+          {error && (
+            <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl p-3.5 text-red-600 text-[13px] mb-6 leading-relaxed">
+              <AlertCircle size={15} className="flex-shrink-0 mt-0.5" />
+              <span style={{ fontWeight: 500 }}>{error}</span>
+            </div>
+          )}
+
+          <Formik
+            initialValues={{ email: "", password: "" }}
+            validationSchema={loginSchema}
+            validateOnChange={false}
+            validateOnBlur={true}
+            onSubmit={handleLogin}
+          >
+            {({
+              errors,
+              touched,
+              values,
+              isSubmitting,
+              handleChange,
+              handleBlur,
+            }) => (
+              <Form className="space-y-4">
+                {/* Email */}
+                <div>
+                  <label
+                    className="block text-slate-600 mb-1"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    Email address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    className="w-full px-3.5 py-2 rounded-xl border bg-white text-slate-900 outline-none transition-all text-[13px]"
+                    style={{
+                      fontWeight: 400,
+                      borderColor:
+                        errors.email &&
+                        touched.email &&
+                        focusedField !== "email"
+                          ? "#fca5a5"
+                          : !errors.email && values.email
+                            ? "#6ee7b7"
+                            : "#e2e8f0",
+                      boxShadow:
+                        focusedField === "email"
+                          ? "0 0 0 3px rgba(15,23,42,0.08)"
+                          : "none",
+                    }}
+                    value={values.email}
+                    onChange={handleChange}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={(e) => {
+                      setFocusedField("");
+                      handleBlur(e);
+                    }}
+                  />
+                  {errors.email &&
+                    touched.email &&
+                    focusedField !== "email" && (
+                      <p
+                        className="flex items-center gap-1 text-red-500 text-[11px] mt-1"
+                        style={{ fontWeight: 500 }}
+                      >
+                        <AlertCircle size={10} /> {errors.email}
+                      </p>
+                    )}
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label
+                    className="block text-slate-600 mb-1"
+                    style={{
+                      fontSize: "11px",
+                      fontWeight: 500,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.06em",
+                    }}
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <input
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      className="w-full px-3.5 py-2 rounded-xl border bg-white text-slate-900 outline-none transition-all pr-10 text-[13px]"
+                      style={{
+                        fontWeight: 400,
+                        borderColor:
+                          errors.password &&
+                          touched.password &&
+                          focusedField !== "password"
+                            ? "#fca5a5"
+                            : "#e2e8f0",
+                        boxShadow:
+                          focusedField === "password"
+                            ? "0 0 0 3px rgba(15,23,42,0.08)"
+                            : "none",
+                      }}
+                      value={values.password}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField("password")}
+                      onBlur={(e) => {
+                        setFocusedField("");
+                        handleBlur(e);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 transition-colors"
+                      onClick={() => setShowPassword((p) => !p)}
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                  {errors.password &&
+                    touched.password &&
+                    focusedField !== "password" && (
+                      <p
+                        className="flex items-center gap-1 text-red-500 text-[11px] mt-1"
+                        style={{ fontWeight: 500 }}
+                      >
+                        <AlertCircle size={10} /> {errors.password}
+                      </p>
+                    )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed text-[13px]"
+                  style={{ backgroundColor: "#0f172a", fontWeight: 600 }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#1e293b")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#0f172a")
+                  }
+                >
+                  {isSubmitting ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Signing in…
+                    </>
+                  ) : (
+                    <>
+                      Sign in <ArrowRight size={14} />
+                    </>
+                  )}
+                </button>
+
+                <p
+                  className="text-center text-slate-500 text-[12px]"
+                  style={{ fontWeight: 400 }}
+                >
+                  Don't have an account?{" "}
+                  <button
+                    type="button"
+                    className="text-slate-900 underline underline-offset-2 hover:text-slate-600 transition-colors"
+                    style={{
+                      fontWeight: 600,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    onClick={() => handleNavigation("/register")}
+                  >
+                    Create account
+                  </button>
+                </p>
+              </Form>
+            )}
+          </Formik>
+        </div>
+      </div>
+    </div>
   );
 }

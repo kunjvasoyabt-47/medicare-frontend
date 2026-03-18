@@ -13,24 +13,24 @@ export default function AdminLayout({ children }) {
     sessionStorage.setItem("admin_sidebar", String(sidebarOpen));
   }, [sidebarOpen]);
 
-  const handleMenuToggle = () => {
-    setSidebarOpen((o) => !o);
-  };
-
   return (
-    <div className="min-h-screen bg-slate-100 font-sans">
-      <AdminNavbar sidebarOpen={sidebarOpen} onMenuToggle={handleMenuToggle} />
+    <div
+      className="min-h-screen bg-slate-50"
+      style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+    >
+      <AdminNavbar
+        sidebarOpen={sidebarOpen}
+        onMenuToggle={() => setSidebarOpen((o) => !o)}
+      />
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        onMenuToggle={handleMenuToggle}
+        onMenuToggle={() => setSidebarOpen((o) => !o)}
       />
-
       <main
-        className={`pt-16 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "pl-64" : "pl-0"
-          }`}
+        className={`pt-14 min-h-screen transition-all duration-300 ease-in-out ${sidebarOpen ? "lg:pl-64" : "lg:pl-0"}`}
       >
-        <div className="p-4 md:p-6 lg:p-8">{children}</div>
+        <div className="p-5 md:p-7 lg:p-8">{children}</div>
       </main>
     </div>
   );

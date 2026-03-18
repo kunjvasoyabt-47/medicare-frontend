@@ -1,4 +1,4 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
@@ -16,18 +16,24 @@ import SystemLoader from "../../components/SystemLoader";
 
 function StatCard({ icon: Icon, label, value, colorClass, bgClass }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-all group">
+    <div className="bg-white rounded-xl border border-slate-200 p-5 flex items-center gap-4">
       <div
-        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${bgClass} group-hover:scale-110 transition-transform`}
+        className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${bgClass}`}
       >
-        <Icon size={22} className={colorClass} />
+        <Icon size={18} className={colorClass} />
       </div>
       <div>
-        <p className="text-slate-400 text-[11px] font-black uppercase tracking-widest">
+        <p
+          className="text-slate-500 text-[11px] uppercase tracking-widest mb-0.5"
+          style={{ fontWeight: 500 }}
+        >
           {label}
         </p>
-        <p className="text-slate-900 text-[28px] font-black leading-none mt-0.5 tabular-nums">
-          {value ?? <span className="text-slate-200 text-[22px]">—</span>}
+        <p
+          className="text-slate-900 text-[26px] leading-none tabular-nums"
+          style={{ fontWeight: 700 }}
+        >
+          {value ?? <span className="text-slate-200 text-[20px]">—</span>}
         </p>
       </div>
     </div>
@@ -50,7 +56,10 @@ export default function PatientDashboard() {
   if (loading) {
     return (
       <PatientLayout>
-        <SystemLoader label="Loading Dashboard" sublabel="Preparing your latest discharge overview" />
+        <SystemLoader
+          label="Loading Dashboard"
+          sublabel="Preparing your latest discharge overview"
+        />
       </PatientLayout>
     );
   }
@@ -61,31 +70,48 @@ export default function PatientDashboard() {
     <PatientLayout>
       <div className="max-w-4xl mx-auto">
         {/* Welcome banner */}
-        <div className="bg-[#0f172a] rounded-3xl p-6 md:p-8 mb-8 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-5 grid-pattern" />
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-2xl font-black text-white border border-white/20 backdrop-blur-md shrink-0">
+        <div className="bg-slate-900 rounded-xl p-5 md:p-6 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div
+              className="w-11 h-11 bg-white/10 rounded-lg flex items-center justify-center text-xl text-white border border-white/15 shrink-0"
+              style={{ fontWeight: 700 }}
+            >
               {patient?.email?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-slate-400 text-[13px] font-medium mb-1">
+              <p
+                className="text-slate-500 text-[12px] mb-0.5"
+                style={{ fontWeight: 400 }}
+              >
                 Welcome back
               </p>
-              <h1 className="text-white font-black text-[22px] md:text-[26px] tracking-tight truncate">
+              <h1
+                className="text-white text-[20px] md:text-[22px] truncate"
+                style={{ fontWeight: 700, letterSpacing: "-0.01em" }}
+              >
                 {patient?.full_name}
               </h1>
-              <p className="text-slate-500 text-[13px] mt-0.5 truncate">
+              <p
+                className="text-slate-500 text-[12px] mt-0.5 truncate"
+                style={{ fontWeight: 400 }}
+              >
                 {patient?.email}
               </p>
             </div>
             <div>
               {stats?.is_discharged ? (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-500/20 text-slate-300 rounded-full text-[11px] font-black uppercase tracking-widest border border-slate-500/30">
-                  <CheckCircle size={12} /> Discharged
+                <span
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-slate-300 rounded-full text-[11px] border border-white/10"
+                  style={{ fontWeight: 500 }}
+                >
+                  <CheckCircle size={11} /> Discharged
                 </span>
               ) : (
-                <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[11px] font-black uppercase tracking-widest border border-emerald-500/30">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[11px] border border-emerald-500/30"
+                  style={{ fontWeight: 500 }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />{" "}
                   Active
                 </span>
               )}
@@ -94,7 +120,7 @@ export default function PatientDashboard() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <StatCard
             icon={ClipboardList}
             label="Total Discharges"
@@ -120,41 +146,58 @@ export default function PatientDashboard() {
 
         {/* Latest discharge */}
         {latest_discharge ? (
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-6">
-            <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-              <h2 className="font-black text-slate-900 text-[16px] flex items-center gap-2">
-                <Calendar size={18} className="text-slate-400" />
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2
+                className="text-slate-900 text-[14px] flex items-center gap-2"
+                style={{ fontWeight: 600 }}
+              >
+                <Calendar size={15} className="text-slate-400" />
                 Latest Discharge
               </h2>
               <button
                 onClick={() => navigate("/patient/discharge-history")}
-                className="text-[13px] font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 hover:underline"
+                className="text-[12px] text-slate-600 hover:text-slate-900 flex items-center gap-1 transition-colors"
+                style={{ fontWeight: 500 }}
               >
-                View All <ChevronRight size={14} />
+                View all <ChevronRight size={13} />
               </button>
             </div>
-            <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5">
+            <div className="bg-slate-50 rounded-lg border border-slate-200 p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-xl text-[12px] font-black">
-                      Discharge #
-                      {String(latest_discharge.discharge_id).padStart(4, "0")}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-slate-600 text-[14px] font-semibold">
-                    <Calendar size={14} className="text-slate-400" />
+                  <span
+                    className="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-md text-[12px] inline-block mb-2"
+                    style={{ fontWeight: 500 }}
+                  >
+                    Discharge #
+                    {String(latest_discharge.discharge_id).padStart(4, "0")}
+                  </span>
+                  <div
+                    className="flex items-center gap-1.5 text-slate-600 text-[13px]"
+                    style={{ fontWeight: 400 }}
+                  >
+                    <Calendar size={13} className="text-slate-400" />
                     {latest_discharge.discharge_date || "Date not recorded"}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-xl text-[12px] font-bold">
+                  <span
+                    className="px-2.5 py-1 bg-blue-50 text-blue-600 rounded-md text-[12px]"
+                    style={{ fontWeight: 500 }}
+                  >
                     {latest_discharge.processed_reports} Reports
                   </span>
-                  <span className="px-2.5 py-1 bg-violet-50 text-violet-600 rounded-xl text-[12px] font-bold">
+                  <span
+                    className="px-2.5 py-1 bg-violet-50 text-violet-600 rounded-md text-[12px]"
+                    style={{ fontWeight: 500 }}
+                  >
                     {latest_discharge.processed_bills} Bills
                   </span>
-                  <span className="px-2.5 py-1 bg-teal-50 text-teal-600 rounded-xl text-[12px] font-bold">
+                  <span
+                    className="px-2.5 py-1 bg-teal-50 text-teal-600 rounded-md text-[12px]"
+                    style={{ fontWeight: 500 }}
+                  >
                     {latest_discharge.processed_prescriptions} Rx
                   </span>
                 </div>
@@ -165,19 +208,26 @@ export default function PatientDashboard() {
                     `/patient/discharge/${latest_discharge.discharge_id}`,
                   )
                 }
-                className="mt-4 w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0f172a] text-white rounded-xl font-bold text-[13px] hover:bg-slate-700 transition-all"
+                className="mt-4 flex items-center gap-2 px-4 py-2 bg-slate-900 text-white rounded-lg text-[13px] hover:bg-slate-700 transition-all"
+                style={{ fontWeight: 500 }}
               >
-                View Documents <ChevronRight size={14} />
+                View Documents <ChevronRight size={13} />
               </button>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-3xl border border-slate-100 shadow-sm p-10 text-center">
-            <Clock size={36} className="text-slate-200 mx-auto mb-3" />
-            <p className="text-slate-500 font-bold text-[15px]">
+          <div className="bg-white rounded-xl border border-slate-200 p-10 text-center">
+            <Clock size={32} className="text-slate-200 mx-auto mb-3" />
+            <p
+              className="text-slate-600 text-[14px]"
+              style={{ fontWeight: 500 }}
+            >
               No discharge records yet
             </p>
-            <p className="text-slate-400 text-[13px] mt-1">
+            <p
+              className="text-slate-400 text-[13px] mt-1"
+              style={{ fontWeight: 400 }}
+            >
               Your discharge history will appear here once processed by the
               admin.
             </p>

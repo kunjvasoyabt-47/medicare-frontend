@@ -42,40 +42,46 @@ export default function Pagination({
   const start = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const end = Math.min(currentPage * pageSize, totalItems);
 
+  const countText =
+    totalItems === 0 ? "No records found" : `${start}–${end} of ${totalItems}`;
+
+  const baseStyle = { fontFamily: "'Inter', system-ui, sans-serif" };
+
   if (totalPages <= 1 && totalItems <= pageSize) {
     return (
-      <div className="mt-6 pt-5 border-t border-slate-100">
-        <p className="text-[13px] font-semibold text-slate-400">
-          {totalItems === 0
-            ? "No records found"
-            : `Showing ${start}–${end} of ${totalItems} records`}
+      <div className="mt-4 pt-4 border-t border-slate-100" style={baseStyle}>
+        <p className="text-slate-400 text-[12px]" style={{ fontWeight: 400 }}>
+          {countText}
         </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-6 pt-5 border-t border-slate-100">
-      <p className="text-[13px] font-semibold text-slate-400">
-        {totalItems === 0
-          ? "No records found"
-          : `Showing ${start}–${end} of ${totalItems} records`}
+    <div
+      className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-4 pt-4 border-t border-slate-100"
+      style={baseStyle}
+    >
+      <p className="text-slate-400 text-[12px]" style={{ fontWeight: 400 }}>
+        {countText}
       </p>
+
       <div className="flex items-center gap-1">
+        {/* Prev */}
         <button
           disabled={currentPage === 1 || isLoading}
           onClick={() => onPageChange(currentPage - 1)}
-          className="p-2 rounded-xl border border-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           aria-label="Previous page"
         >
-          <ChevronLeft size={16} />
+          <ChevronLeft size={13} />
         </button>
 
         {getPageNumbers(currentPage, totalPages).map((page, idx) =>
           page === "..." ? (
             <span
               key={`dots-${idx}`}
-              className="px-2 text-slate-400 text-sm select-none"
+              className="w-7 h-7 flex items-center justify-center text-slate-300 text-[12px] select-none"
             >
               …
             </span>
@@ -84,24 +90,26 @@ export default function Pagination({
               key={page}
               onClick={() => onPageChange(page)}
               disabled={isLoading}
-              className={`w-9 h-9 rounded-xl text-[13px] font-bold transition-all disabled:cursor-not-allowed ${
+              className={`w-7 h-7 flex items-center justify-center rounded-lg text-[12px] transition-all disabled:cursor-not-allowed ${
                 page === currentPage
-                  ? "bg-[#0f172a] text-white shadow-md shadow-slate-900/10"
+                  ? "bg-slate-900 text-white"
                   : "border border-slate-200 text-slate-600 hover:bg-slate-50"
               }`}
+              style={{ fontWeight: page === currentPage ? 600 : 400 }}
             >
               {page}
             </button>
           ),
         )}
 
+        {/* Next */}
         <button
           disabled={currentPage >= totalPages || isLoading}
           onClick={() => onPageChange(currentPage + 1)}
-          className="p-2 rounded-xl border border-slate-200 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
           aria-label="Next page"
         >
-          <ChevronRight size={16} />
+          <ChevronRight size={13} />
         </button>
       </div>
     </div>

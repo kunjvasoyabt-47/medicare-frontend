@@ -34,18 +34,30 @@ function Field({
   options,
   error,
 }) {
-  const inputCls = `w-full bg-white border rounded-xl px-3 py-2 text-slate-800 font-bold text-[14px] focus:outline-none focus:ring-2 transition-all ${error
-      ? "border-red-400 focus:ring-red-200 focus:border-red-400"
-      : "border-slate-200 focus:ring-slate-200 focus:border-slate-400"
-    }`;
+  const baseInputStyle = {
+    width: "100%",
+    padding: "8px 12px",
+    border: `1px solid ${error ? "#fca5a5" : "#e2e8f0"}`,
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 400,
+    color: "#1e293b",
+    outline: "none",
+    backgroundColor: "white",
+    transition: "border-color 0.15s",
+    fontFamily: "inherit",
+  };
 
   return (
-    <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#f8fafc] border border-slate-100 group hover:border-slate-200 transition-all">
-      <div className="p-2.5 bg-white text-slate-400 rounded-xl shadow-sm border border-slate-100 group-hover:bg-[#0f172a] group-hover:text-white transition-all shrink-0">
-        <Icon size={17} />
+    <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-all">
+      <div className="p-2 bg-white text-slate-400 rounded-lg border border-slate-100 shrink-0 mt-0.5">
+        <Icon size={14} />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-slate-500 font-semibold text-[12px] uppercase tracking-wider mb-1">
+        <p
+          className="text-slate-500 text-[11px] uppercase tracking-wider mb-1.5"
+          style={{ fontWeight: 500 }}
+        >
           {label}
         </p>
         {isEditing && name ? (
@@ -55,7 +67,14 @@ function Field({
                 name={name}
                 value={value || ""}
                 onChange={onChange}
-                className={inputCls}
+                style={{
+                  ...baseInputStyle,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 10px center",
+                  paddingRight: "30px",
+                  appearance: "none",
+                }}
               >
                 <option value="">— Not specified —</option>
                 {options.map((o) => (
@@ -70,18 +89,26 @@ function Field({
                 name={name}
                 value={value || ""}
                 onChange={onChange}
-                className={inputCls}
+                style={baseInputStyle}
               />
             )}
             {error && (
-              <p className="flex items-center gap-1 text-red-500 text-[11px] font-semibold mt-1">
-                <AlertCircle size={11} className="shrink-0" /> {error}
+              <p
+                className="flex items-center gap-1 text-red-500 text-[11px] mt-1.5"
+                style={{ fontWeight: 500 }}
+              >
+                <AlertCircle size={10} className="shrink-0" /> {error}
               </p>
             )}
           </>
         ) : (
-          <p className="text-slate-800 font-bold text-[14px] truncate">
-            {value || "—"}
+          <p
+            className="text-slate-800 text-[13px] truncate"
+            style={{ fontWeight: 500 }}
+          >
+            {value || (
+              <span style={{ color: "#94a3b8", fontWeight: 400 }}>—</span>
+            )}
           </p>
         )}
       </div>
@@ -126,9 +153,8 @@ export default function PatientProfile() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (fieldErrors[name]) {
+    if (fieldErrors[name])
       setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
   };
 
   const handleSave = async () => {
@@ -158,11 +184,10 @@ export default function PatientProfile() {
       if (form.dob !== (profile.dob || "")) payload.dob = form.dob || null;
       if (form.address !== (profile.address || ""))
         payload.address = form.address || null;
-
       const r = await api.patch(API_ROUTES.patient.profile, payload);
       setProfile((prev) => ({ ...prev, ...r.data }));
       setIsEditing(false);
-      showToast("Profile updated successfully!");
+      showToast("Profile updated successfully.");
     } catch (err) {
       setError(err?.response?.data?.detail || "Failed to update profile.");
     } finally {
@@ -187,7 +212,10 @@ export default function PatientProfile() {
   if (loading) {
     return (
       <PatientLayout>
-        <SystemLoader label="Loading Profile" sublabel="Retrieving your personal details" />
+        <SystemLoader
+          label="Loading Profile"
+          sublabel="Retrieving your personal details"
+        />
       </PatientLayout>
     );
   }
@@ -197,48 +225,61 @@ export default function PatientProfile() {
       {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold animate-in slide-in-from-top-3 duration-300 ${toast.type === "error"
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-[13px] ${
+            toast.type === "error"
               ? "bg-red-600 text-white border-red-700"
               : "bg-emerald-600 text-white border-emerald-700"
-            }`}
+          }`}
+          style={{ fontWeight: 500 }}
         >
           {toast.type === "error" ? (
-            <AlertCircle size={16} />
+            <AlertCircle size={14} />
           ) : (
-            <CheckCircle size={16} />
+            <CheckCircle size={14} />
           )}
           {toast.message}
         </div>
       )}
 
       <div className="max-w-2xl mx-auto">
-        {/* Back button */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-6 px-4 py-2.5 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 transition-all text-[14px]"
+          className="flex items-center gap-2 mb-5 px-3.5 py-2 bg-white text-slate-600 rounded-lg border border-slate-200 hover:bg-slate-50 transition-all text-[13px]"
+          style={{ fontWeight: 500 }}
         >
-          <ArrowLeft size={16} /> Back
+          <ArrowLeft size={14} /> Back
         </button>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          {/* Hero header */}
-          <div className="bg-[#0f172a] relative overflow-hidden">
-            <div className="absolute inset-0 opacity-5 grid-pattern" />
-            <div className="relative p-8 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-              <div className="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-black text-white border border-white/20 shadow-2xl backdrop-blur-md shrink-0">
+        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+          {/* Hero */}
+          <div className="bg-slate-900 p-5 md:p-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <div
+                className="w-14 h-14 bg-white/10 rounded-xl flex items-center justify-center text-2xl text-white border border-white/15 shrink-0"
+                style={{ fontWeight: 700 }}
+              >
                 {profile?.full_name?.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 text-center sm:text-left min-w-0">
-                <h1 className="text-[24px] font-black text-white tracking-tight truncate">
+                <h1
+                  className="text-white text-[20px] truncate"
+                  style={{ fontWeight: 700, letterSpacing: "-0.01em" }}
+                >
                   {isEditing
                     ? form.full_name || profile?.full_name
                     : profile?.full_name}
                 </h1>
-                <p className="text-slate-400 text-[14px] mt-1 truncate">
+                <p
+                  className="text-slate-400 text-[13px] mt-0.5 truncate"
+                  style={{ fontWeight: 400 }}
+                >
                   {isEditing ? form.email || profile?.email : profile?.email}
                 </p>
                 {profile?.created_at && (
-                  <p className="text-slate-600 text-[12px] mt-2">
+                  <p
+                    className="text-slate-600 text-[11px] mt-1.5"
+                    style={{ fontWeight: 400 }}
+                  >
                     Member since{" "}
                     {new Date(profile.created_at).toLocaleDateString("en-US", {
                       year: "numeric",
@@ -247,26 +288,27 @@ export default function PatientProfile() {
                   </p>
                 )}
               </div>
-              {/* Edit / Save / Cancel */}
               <div className="flex gap-2 shrink-0">
                 {isEditing ? (
                   <>
                     <button
                       onClick={handleCancel}
                       disabled={saving}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-white/10 text-white rounded-xl font-bold text-[13px] hover:bg-white/20 transition-all disabled:opacity-50 border border-white/10"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-white rounded-lg text-[12px] hover:bg-white/20 transition-all disabled:opacity-50 border border-white/10"
+                      style={{ fontWeight: 500 }}
                     >
-                      <X size={14} /> Cancel
+                      <X size={13} /> Cancel
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-emerald-500 text-white rounded-xl font-bold text-[13px] hover:bg-emerald-600 transition-all disabled:opacity-60 shadow-lg shadow-emerald-500/20"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500 text-white rounded-lg text-[12px] hover:bg-emerald-600 transition-all disabled:opacity-60"
+                      style={{ fontWeight: 500 }}
                     >
                       {saving ? (
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={13} className="animate-spin" />
                       ) : (
-                        <Save size={14} />
+                        <Save size={13} />
                       )}
                       {saving ? "Saving…" : "Save"}
                     </button>
@@ -274,9 +316,10 @@ export default function PatientProfile() {
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-white/10 text-white rounded-xl font-bold text-[13px] hover:bg-white/20 transition-all border border-white/10"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 text-white rounded-lg text-[12px] hover:bg-white/20 transition-all border border-white/10"
+                    style={{ fontWeight: 500 }}
                   >
-                    <Edit3 size={14} /> Edit Profile
+                    <Edit3 size={13} /> Edit Profile
                   </button>
                 )}
               </div>
@@ -284,25 +327,30 @@ export default function PatientProfile() {
           </div>
 
           {/* Fields */}
-          <div className="p-6 md:p-8">
-            <div className="flex items-center gap-2 mb-5">
-              <Activity size={16} className="text-slate-400" />
-              <h2 className="font-black text-slate-800 text-[15px]">
+          <div className="p-5 md:p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity size={14} className="text-slate-400" />
+              <h2
+                className="text-slate-700 text-[13px]"
+                style={{ fontWeight: 600 }}
+              >
                 Profile Information
               </h2>
             </div>
 
             {error && (
               <div className="mb-4 flex items-center gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-xl">
-                <AlertCircle size={15} className="text-red-500 shrink-0" />
-                <p className="text-red-700 text-[13px] font-semibold">
+                <AlertCircle size={14} className="text-red-500 shrink-0" />
+                <p
+                  className="text-red-700 text-[13px]"
+                  style={{ fontWeight: 500 }}
+                >
                   {error}
                 </p>
               </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Editable name & email */}
               <Field
                 label="Full Name"
                 icon={User}
@@ -322,8 +370,6 @@ export default function PatientProfile() {
                 onChange={handleChange}
                 error={fieldErrors.email}
               />
-
-              {/* Editable fields */}
               <Field
                 label="Phone Number"
                 icon={Phone}
