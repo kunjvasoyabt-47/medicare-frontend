@@ -10,19 +10,25 @@ export const API_ROUTES = {
     dashboard: "/admin/dashboard",
     patients: "/admin/patients",
     patientById: (patientId) => `/admin/patients/${patientId}`,
+    admitPatient: (patientId) => `/admin/patients/${patientId}/admit`,
     dischargeHistory: "/admin/discharge-history",
-    dischargeDocuments: (dischargeId) => `/admin/discharge/${dischargeId}/documents`,
+    dischargeDocuments: (dischargeId) =>
+      `/admin/discharge/${dischargeId}/documents`,
     dischargePdfs: (dischargeId) => `/admin/discharge/${dischargeId}/pdfs`,
   },
   patient: {
     dashboard: "/patient/dashboard",
     profile: "/patient/profile",
     dischargeHistory: "/patient/discharge-history",
-    dischargeDocuments: (dischargeId) => `/patient/discharge/${dischargeId}/documents`,
+    dischargeDocuments: (dischargeId) =>
+      `/patient/discharge/${dischargeId}/documents`,
     dischargePdfs: (dischargeId) => `/patient/discharge/${dischargeId}/pdfs`,
-    dischargeReportSummary: (dischargeId) => `/api/reports/discharge/${dischargeId}/summary`,
-    patientFriendlyReport: (patientId) => `/api/patient-friendly-report/convert-pdf/${patientId}`,
-    generateInsuranceReadyDoc: (patientId) => `/api/patient/${patientId}/generate-ird`,
+    dischargeReportSummary: (dischargeId) =>
+      `/api/reports/discharge/${dischargeId}/summary`,
+    patientFriendlyReport: (patientId) =>
+      `/api/patient-friendly-report/convert-pdf/${patientId}`,
+    generateInsuranceReadyDoc: (patientId) =>
+      `/api/patient/${patientId}/generate-ird`,
   },
   discharge: {
     status: (dischargeId) => `/api/discharge/${dischargeId}/status`,

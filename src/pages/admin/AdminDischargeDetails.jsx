@@ -10,6 +10,8 @@ import {
   Calendar,
   Mail,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import AdminLayout from "../../components/admin/AdminLayout";
 import api from "../../lib/axios";
@@ -83,56 +85,128 @@ function PdfCard({ title, subtitle, url }) {
   );
 }
 
-function MedCard({ med }) {
+function MedicationsDropdown({ medications }) {
+  const [open, setOpen] = useState(false);
+  const meds = medications || [];
+  const activeMeds = meds.filter((m) => m.is_active);
+
   return (
-    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 transition-all">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-slate-900 text-[13px]" style={{ fontWeight: 600 }}>
-            {med.drug_name}
-          </p>
-          <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-            {med.strength && (
-              <span
-                className="text-[12px] text-slate-500"
-                style={{ fontWeight: 400 }}
-              >
-                Strength: {med.strength}
-              </span>
-            )}
-            {med.dosage && (
-              <span
-                className="text-[12px] text-slate-500"
-                style={{ fontWeight: 400 }}
-              >
-                Dose: {med.dosage}
-              </span>
-            )}
-            {med.frequency_of_dose_per_day && (
-              <span
-                className="text-[12px] text-slate-500"
-                style={{ fontWeight: 400 }}
-              >
-                {med.frequency_of_dose_per_day}×/day
-              </span>
-            )}
-            {med.form_of_medicine && (
-              <span
-                className="text-[12px] text-slate-500 capitalize"
-                style={{ fontWeight: 400 }}
-              >
-                {med.form_of_medicine}
-              </span>
-            )}
-          </div>
+    <div className="bg-white rounded-xl border border-slate-200 mt-4 overflow-hidden">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-slate-50 transition-colors text-left"
+      >
+        <div className="p-1.5 bg-teal-50 rounded-lg shrink-0">
+          <Pill size={15} className="text-teal-600" />
         </div>
-        <span
-          className={`shrink-0 px-2 py-0.5 rounded-md text-[11px] ${med.is_active ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
-          style={{ fontWeight: 500 }}
-        >
-          {med.is_active ? "Active" : "Inactive"}
-        </span>
-      </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-slate-800 text-[13px]" style={{ fontWeight: 600 }}>
+            Medications / Prescriptions
+          </p>
+          <p
+            className="text-slate-400 text-[11px] mt-0.5"
+            style={{ fontWeight: 400 }}
+          >
+            {meds.length} total
+            {activeMeds.length > 0 && ` · ${activeMeds.length} active`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {activeMeds.length > 0 && (
+            <span
+              className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-600 text-[11px]"
+              style={{ fontWeight: 500 }}
+            >
+              {activeMeds.length} active
+            </span>
+          )}
+          <span
+            className="px-2 py-0.5 rounded-md bg-teal-50 text-teal-600 text-[11px]"
+            style={{ fontWeight: 500 }}
+          >
+            {meds.length}
+          </span>
+          {open ? (
+            <ChevronUp size={14} className="text-slate-400" />
+          ) : (
+            <ChevronDown size={14} className="text-slate-400" />
+          )}
+        </div>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 px-5 py-4">
+          {meds.length === 0 ? (
+            <p
+              className="text-slate-400 text-[13px] text-center py-4"
+              style={{ fontWeight: 400 }}
+            >
+              No medications recorded
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {meds.map((med, idx) => (
+                <div
+                  key={med.id || idx}
+                  className="flex items-start gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-lg hover:border-slate-300 transition-all"
+                >
+                  <div className="p-1.5 bg-teal-50 rounded-lg shrink-0 mt-0.5">
+                    <Pill size={12} className="text-teal-600" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-slate-900 text-[13px]"
+                      style={{ fontWeight: 600 }}
+                    >
+                      {med.drug_name}
+                    </p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
+                      {med.strength && (
+                        <span
+                          className="text-[12px] text-slate-500"
+                          style={{ fontWeight: 400 }}
+                        >
+                          Strength: {med.strength}
+                        </span>
+                      )}
+                      {med.dosage && (
+                        <span
+                          className="text-[12px] text-slate-500"
+                          style={{ fontWeight: 400 }}
+                        >
+                          Dose: {med.dosage}
+                        </span>
+                      )}
+                      {med.frequency_of_dose_per_day && (
+                        <span
+                          className="text-[12px] text-slate-500"
+                          style={{ fontWeight: 400 }}
+                        >
+                          {med.frequency_of_dose_per_day}×/day
+                        </span>
+                      )}
+                      {med.form_of_medicine && (
+                        <span
+                          className="text-[12px] text-slate-500 capitalize"
+                          style={{ fontWeight: 400 }}
+                        >
+                          {med.form_of_medicine}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    className={`shrink-0 px-2 py-0.5 rounded-md text-[11px] ${med.is_active ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-500"}`}
+                    style={{ fontWeight: 500 }}
+                  >
+                    {med.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -458,29 +532,7 @@ export default function AdminDischargeDetails() {
         </div>
 
         {/* Medications */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 mt-4">
-          <SectionHeader
-            icon={Pill}
-            title="Medications / Prescriptions"
-            count={data.medications?.length || 0}
-            colorClass="text-teal-600"
-            bgClass="bg-teal-50"
-          />
-          {data.medications?.length === 0 ? (
-            <p
-              className="text-slate-400 text-[13px] text-center py-5"
-              style={{ fontWeight: 400 }}
-            >
-              No medications recorded
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {data.medications.map((m) => (
-                <MedCard key={m.id} med={m} />
-              ))}
-            </div>
-          )}
-        </div>
+        <MedicationsDropdown medications={data.medications} />
       </div>
     </AdminLayout>
   );

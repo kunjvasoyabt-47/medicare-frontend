@@ -40,6 +40,8 @@ import {
   RefreshCw,
   Zap,
   Ban,
+  ChevronDown,
+  Lock,
 } from "lucide-react";
 
 export default function PatientDetails() {
@@ -96,18 +98,17 @@ export default function PatientDetails() {
   const [isGeneratingPatientDoc, setIsGeneratingPatientDoc] = useState(false);
   const [isGeneratingInsuranceDoc, setIsGeneratingInsuranceDoc] =
     useState(false);
+  const [isAdmitting, setIsAdmitting] = useState(false);
 
   const [submittedFiles, setSubmittedFiles] = useState(null);
   const [apiSucceeded, setApiSucceeded] = useState(false);
+  const [errorDetails, setErrorDetails] = useState(null);
 
-  // ── Toast helper ──────────────────────────────────────────────────────────
   const showToast = useCallback((message, type = "success") => {
     clearTimeout(toastRef.current);
     setToast({ message, type });
     toastRef.current = setTimeout(() => setToast(null), 3500);
   }, []);
-
-  const [errorDetails, setErrorDetails] = useState(null);
 
   const resetUploadState = useCallback(() => {
     setFiles({ reports: [], bills: [], prescriptions: [] });
@@ -210,6 +211,33 @@ export default function PatientDetails() {
     }
   };
 
+  const handleAdmitPatient = async () => {
+    if (isAdmitting) return;
+    setIsAdmitting(true);
+    try {
+      await api.patch(API_ROUTES.admin.admitPatient(id));
+      const updatedPatient = await api.get(API_ROUTES.admin.patientById(id));
+      setData(updatedPatient.data);
+      resetUploadState();
+      setSummaryFile(null);
+      setSummaryStatus("idle");
+      setSummaryProgress(0);
+      setSummaryError(null);
+      setPatientFriendlyUrl(null);
+      setInsuranceReadyUrl(null);
+      showToast("Patient admitted and ready for fresh document processing.");
+      setIsEditing(true);
+    } catch (err) {
+      const errorMsg =
+        typeof err?.response?.data?.detail === "string"
+          ? err.response.data.detail
+          : "Failed to admit patient";
+      showToast(errorMsg, "error");
+    } finally {
+      setIsAdmitting(false);
+    }
+  };
+
   const removeSummaryFile = () => {
     setSummaryFile(null);
     setSummaryStatus("idle");
@@ -245,9 +273,10 @@ export default function PatientDetails() {
       try {
         const res = await api.get(API_ROUTES.admin.patientById(id));
         setData(res.data);
-        if (res.data.patient_friendly_url)
+        if (res.data.is_discharged && res.data.patient_friendly_url)
           setPatientFriendlyUrl(res.data.patient_friendly_url);
-        if (res.data.ird_url) setInsuranceReadyUrl(res.data.ird_url);
+        if (res.data.is_discharged && res.data.ird_url)
+          setInsuranceReadyUrl(res.data.ird_url);
       } catch (err) {
         console.error("Fetch error:", err);
       } finally {
@@ -310,15 +339,8 @@ export default function PatientDetails() {
             try {
               const pr = await api.get(API_ROUTES.admin.patientById(id));
               setData(pr.data);
-              console.log(
-                "[polling] completed — patient data refreshed:",
-                pr.data,
-              );
             } catch (e) {
-              console.warn(
-                "[polling] could not refresh patient data after completion:",
-                e,
-              );
+              console.warn("[polling] could not refresh patient data:", e);
             }
             showToast("All documents processed successfully!");
           } else if (s.status === "failed") {
@@ -386,7 +408,7 @@ export default function PatientDetails() {
             });
           }
         } catch {
-          // keep polling on transient network errors
+          // keep polling on transient errors
         }
       }, 1200);
     },
@@ -395,8 +417,6 @@ export default function PatientDetails() {
 
   useEffect(() => () => clearInterval(pollingRef.current), []);
 
-  // ── File add with limit enforcement ──────────────────────────────────────
-  // Label map used in toast messages
   const TYPE_LABELS = {
     reports: "Medical Reports",
     bills: "Bills",
@@ -404,7 +424,6 @@ export default function PatientDetails() {
   };
 
   const addFiles = (type, incoming) => {
-    // 1. Filter non-PDFs first and warn
     const pdfs = incoming.filter((f) => f.name.toLowerCase().endsWith(".pdf"));
     const nonPdfs = incoming.filter(
       (f) => !f.name.toLowerCase().endsWith(".pdf"),
@@ -414,19 +433,17 @@ export default function PatientDetails() {
         `Only PDF files are allowed. Skipped: ${nonPdfs.map((f) => f.name).join(", ")}`,
         "error",
       );
-      setSubmitError(null); // clear inline error — toast is enough
+      setSubmitError(null);
     } else {
       setSubmitError(null);
     }
 
-    // 2. Enforce per-type file count limit
     const maxForType = getMaxFiles(type);
-    const currentCount = files[type].length; // files already in the list
-    const capacity = maxForType - currentCount; // how many more are allowed
+    const currentCount = files[type].length;
+    const capacity = maxForType - currentCount;
     const label = TYPE_LABELS[type] ?? type;
 
     if (capacity <= 0) {
-      // Already at the limit — nothing can be added
       showToast(
         `${label} limit reached. Maximum ${maxForType} file${maxForType !== 1 ? "s" : ""} allowed.`,
         "error",
@@ -435,15 +452,12 @@ export default function PatientDetails() {
     }
 
     if (pdfs.length > capacity) {
-      // Some files fit, but not all — add the ones that fit and warn about the rest
       const accepted = pdfs.slice(0, capacity);
       const rejected = pdfs.slice(capacity);
       showToast(
-        `Only ${capacity} more ${label.toLowerCase()} file${capacity !== 1 ? "s" : ""} allowed ` +
-          `(max ${maxForType}). ${rejected.length} file${rejected.length !== 1 ? "s were" : " was"} not added.`,
+        `Only ${capacity} more ${label.toLowerCase()} file${capacity !== 1 ? "s" : ""} allowed (max ${maxForType}). ${rejected.length} file${rejected.length !== 1 ? "s were" : " was"} not added.`,
         "error",
       );
-
       setFiles((prev) => ({ ...prev, [type]: [...prev[type], ...accepted] }));
       setFileStatuses((prev) => ({
         ...prev,
@@ -456,7 +470,6 @@ export default function PatientDetails() {
       return;
     }
 
-    // 3. All PDFs fit — add them all
     setFiles((prev) => ({ ...prev, [type]: [...prev[type], ...pdfs] }));
     setFileStatuses((prev) => ({
       ...prev,
@@ -470,19 +483,19 @@ export default function PatientDetails() {
 
   const removeFile = (type, index) => {
     setFiles((prev) => {
-      const updated = [...prev[type]];
-      updated.splice(index, 1);
-      return { ...prev, [type]: updated };
+      const u = [...prev[type]];
+      u.splice(index, 1);
+      return { ...prev, [type]: u };
     });
     setFileStatuses((prev) => {
-      const updated = [...prev[type]];
-      updated.splice(index, 1);
-      return { ...prev, [type]: updated };
+      const u = [...prev[type]];
+      u.splice(index, 1);
+      return { ...prev, [type]: u };
     });
     setFileErrors((prev) => {
-      const updated = [...prev[type]];
-      updated.splice(index, 1);
-      return { ...prev, [type]: updated };
+      const u = [...prev[type]];
+      u.splice(index, 1);
+      return { ...prev, [type]: u };
     });
   };
 
@@ -622,10 +635,23 @@ export default function PatientDetails() {
   const isCompleted = processState === "completed";
   const isFailed = processState === "failed";
   const isIdle = processState === "idle";
+  const isCurrentlyDischarged = Boolean(data?.is_discharged);
+  const showCompletedDocuments = isCompleted || isCurrentlyDischarged;
   const anyFiles =
     files.reports.length + files.bills.length + files.prescriptions.length > 0;
-  const isDocumentProcessingCompleted =
-    isCompleted || Boolean(data?.discharge_date);
+  const isDocumentProcessingCompleted = isCompleted || isCurrentlyDischarged;
+
+  // Warn user before refresh/close if processing is active or files are staged
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const hasActivity = isProcessing || anyFiles || processState === "failed";
+      if (!hasActivity) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isProcessing, anyFiles, processState]);
 
   const selectedCounts = {
     reports: files.reports.length,
@@ -651,121 +677,114 @@ export default function PatientDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-8 font-sans">
+    <div className="min-h-screen bg-[#f5f6f8] p-4 md:p-8 font-sans">
+      {/* Toast */}
       {toast && (
         <div
-          className={`fixed top-5 right-5 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl border text-[14px] font-bold transition-all duration-500 animate-in slide-in-from-top-3 ${toast.type === "error" ? "bg-red-600 text-white border-red-700 shadow-red-500/30" : "bg-emerald-600 text-white border-emerald-700 shadow-emerald-500/30"}`}
+          className={`fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-md border text-[13px] font-medium transition-all duration-300 animate-in slide-in-from-top-2 ${
+            toast.type === "error"
+              ? "bg-red-50 text-red-700 border-red-200 shadow-red-100"
+              : "bg-emerald-50 text-emerald-700 border-emerald-200 shadow-emerald-100"
+          }`}
         >
           {toast.type === "error" ? (
-            <AlertCircle size={16} className="shrink-0" />
+            <AlertCircle size={14} className="shrink-0 text-red-400" />
           ) : (
-            <CheckCircle size={16} className="shrink-0" />
+            <CheckCircle size={14} className="shrink-0 text-emerald-400" />
           )}
           {toast.message}
         </div>
       )}
 
+      {/* Process Confirm Modal */}
       {showProcessConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <button
             type="button"
-            aria-label="Close confirmation dialog"
-            className="absolute inset-0 bg-black/40"
+            aria-label="Close"
+            className="absolute inset-0 bg-black/30 backdrop-blur-sm"
             onClick={() => {
               if (isConfirmingProcess) return;
               setShowProcessConfirm(false);
             }}
           />
-          <div className="relative w-full max-w-lg rounded-3xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
+          <div className="relative w-full max-w-md rounded-2xl bg-white border border-slate-200 shadow-2xl overflow-hidden">
             <div className="p-6">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 shrink-0">
-                  <AlertCircle size={18} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-slate-900 font-black text-[15px]">
-                    Review documents before processing
-                  </p>
-                  <p className="text-slate-600 text-[13px] mt-1 leading-relaxed font-semibold">
-                    This will process all uploaded documents in one run.
-                  </p>
-                  <div className="mt-4 rounded-2xl bg-slate-50 border border-slate-200 p-4">
-                    <p className="text-slate-500 text-[11px] font-black uppercase tracking-widest mb-3">
-                      Selected files
-                    </p>
-                    <div className="grid grid-cols-1 gap-2">
-                      {[
-                        {
-                          label: "Medical Reports",
-                          value: selectedCounts.reports,
-                          accent: "text-blue-700 bg-blue-50 border-blue-200",
-                        },
-                        {
-                          label: "Bills",
-                          value: selectedCounts.bills,
-                          accent: "text-slate-700 bg-white border-slate-200",
-                        },
-                        {
-                          label: "Prescriptions",
-                          value: selectedCounts.prescriptions,
-                          accent: "text-teal-700 bg-teal-50 border-teal-200",
-                        },
-                      ].map((row) => (
-                        <div
-                          key={row.label}
-                          className="flex items-center justify-between"
-                        >
-                          <span className="text-slate-700 text-[13px] font-bold">
-                            {row.label}
-                          </span>
-                          <span
-                            className={`px-2.5 py-1 rounded-xl text-[12px] font-black border tabular-nums ${row.accent}`}
-                          >
-                            {row.value}
-                          </span>
-                        </div>
-                      ))}
+              <h3 className="text-slate-800 text-[15px] font-semibold mb-1">
+                Review before processing
+              </h3>
+              <p className="text-slate-500 text-[13px] mb-5">
+                All uploaded documents will be processed in a single run.
+              </p>
+
+              <div className="rounded-xl bg-slate-50 border border-slate-100 p-4 mb-4">
+                <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-3">
+                  Selected files
+                </p>
+                <div className="flex flex-col gap-2.5">
+                  {[
+                    {
+                      label: "Medical Reports",
+                      value: selectedCounts.reports,
+                      color: "text-blue-600",
+                    },
+                    {
+                      label: "Bills",
+                      value: selectedCounts.bills,
+                      color: "text-slate-600",
+                    },
+                    {
+                      label: "Prescriptions",
+                      value: selectedCounts.prescriptions,
+                      color: "text-teal-600",
+                    },
+                  ].map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-slate-600 text-[13px]">
+                        {row.label}
+                      </span>
+                      <span
+                        className={`text-[13px] font-semibold tabular-nums ${row.color}`}
+                      >
+                        {row.value} file{row.value !== 1 ? "s" : ""}
+                      </span>
                     </div>
-                  </div>
-                  {missingTypes.length > 0 && (
-                    <div className="mt-4 flex items-start gap-2.5 p-3.5 bg-amber-50 border border-amber-200 rounded-2xl">
-                      <AlertCircle
-                        size={15}
-                        className="text-amber-700 shrink-0 mt-0.5"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-amber-800 text-[13px] font-black">
-                          Missing uploads detected
-                        </p>
-                        <p className="text-amber-800/90 text-[12px] font-semibold leading-relaxed mt-0.5">
-                          You have not uploaded any {missingTypes.join(", ")}.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                  <div className="mt-4 flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200 rounded-2xl">
-                    <Ban size={15} className="text-red-600 shrink-0 mt-0.5" />
-                    <div className="min-w-0">
-                      <p className="text-red-700 text-[13px] font-black">
-                        Important
-                      </p>
-                      <p className="text-red-700/90 text-[12px] font-semibold leading-relaxed mt-0.5">
-                        After you start processing, uploading additional files
-                        for this run will not be allowed.
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
+
+              {missingTypes.length > 0 && (
+                <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-100 rounded-xl mb-3">
+                  <AlertCircle
+                    size={14}
+                    className="text-amber-500 shrink-0 mt-0.5"
+                  />
+                  <p className="text-amber-700 text-[12px]">
+                    No {missingTypes.join(", ")} uploaded. You can still
+                    proceed.
+                  </p>
+                </div>
+              )}
+
+              <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-100 rounded-xl">
+                <Ban size={14} className="text-red-400 shrink-0 mt-0.5" />
+                <p className="text-red-600 text-[12px]">
+                  Additional files cannot be added after processing starts.
+                </p>
+              </div>
             </div>
-            <div className="px-6 pb-6 flex flex-col sm:flex-row gap-2 sm:justify-end">
+
+            <div className="px-6 pb-6 flex gap-2 justify-end">
               <button
                 type="button"
                 onClick={() => setShowProcessConfirm(false)}
                 disabled={isConfirmingProcess}
-                className="px-4 py-2.5 rounded-2xl font-black text-[14px] bg-white text-slate-700 border border-slate-300 hover:border-slate-500 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-2 rounded-xl text-[13px] font-medium bg-white text-slate-600 border border-slate-200 hover:border-slate-300 transition-all disabled:opacity-50"
               >
-                Cancel (Upload More)
+                Cancel
               </button>
               <button
                 type="button"
@@ -780,12 +799,12 @@ export default function PatientDetails() {
                     setIsConfirmingProcess(false);
                   }
                 }}
-                className="px-4 py-2.5 rounded-2xl font-black text-[14px] bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="px-4 py-2 rounded-xl text-[13px] font-medium bg-slate-800 text-white hover:bg-slate-700 transition-all disabled:opacity-50 flex items-center gap-2"
               >
                 {isConfirmingProcess ? (
                   <>
-                    <Loader2 size={15} className="animate-spin" />
-                    Confirming…
+                    <Loader2 size={13} className="animate-spin" />
+                    Processing…
                   </>
                 ) : (
                   "Confirm & Process"
@@ -797,70 +816,70 @@ export default function PatientDetails() {
       )}
 
       <div className="max-w-5xl mx-auto">
+        {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 mb-6 px-4 py-2.5 bg-white text-slate-600 rounded-xl font-bold border border-slate-200 shadow-sm hover:bg-slate-50 transition-all text-[14px]"
+          className="flex items-center gap-1.5 mb-5 text-slate-500 hover:text-slate-700 transition-colors text-[13px] font-medium"
         >
-          <ArrowLeft size={16} /> Back to Dashboard
+          <ArrowLeft size={14} /> Back to Dashboard
         </button>
 
-        <div className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-          <div className="bg-[#0f172a] relative overflow-hidden">
-            <div className="absolute inset-0 opacity-5 grid-pattern" />
-            <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-center md:items-start gap-6">
-              <div className="w-24 h-24 bg-white/10 rounded-2xl flex items-center justify-center text-3xl font-black text-white border border-white/20 shadow-2xl backdrop-blur-md shrink-0">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          {/* Header */}
+          <div className="bg-slate-900 relative overflow-hidden">
+            <div className="relative p-8 md:p-10 flex flex-col md:flex-row items-start gap-6">
+              <div className="w-16 h-16 bg-white/10 rounded-xl flex items-center justify-center text-2xl font-semibold text-white border border-white/10 shrink-0">
                 {data?.full_name?.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 text-center md:text-left">
-                <div className="flex flex-wrap items-center gap-3 justify-center md:justify-start mb-2">
-                  <h1 className="text-3xl font-black text-white tracking-tight">
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-3 mb-1.5">
+                  <h1 className="text-2xl font-semibold text-white tracking-tight">
                     {data?.full_name}
                   </h1>
                   <StatusBadge dischargeDate={data?.discharge_date} />
                 </div>
-                <p className="text-slate-400 text-[14px] font-medium">
-                  {data?.email}
-                </p>
-                <div className="flex flex-wrap gap-4 mt-3 justify-center md:justify-start">
+                <p className="text-slate-400 text-[13px] mb-3">{data?.email}</p>
+                <div className="flex flex-wrap gap-4">
                   {data?.phone_number && (
-                    <span className="flex items-center gap-1.5 text-slate-300 text-[13px]">
-                      <Phone size={13} className="text-slate-500" />{" "}
+                    <span className="flex items-center gap-1.5 text-slate-400 text-[12px]">
+                      <Phone size={12} className="text-slate-500" />{" "}
                       {data.phone_number}
                     </span>
                   )}
                   {data?.dob && (
-                    <span className="flex items-center gap-1.5 text-slate-300 text-[13px]">
-                      <Calendar size={13} className="text-slate-500" />{" "}
+                    <span className="flex items-center gap-1.5 text-slate-400 text-[12px]">
+                      <Calendar size={12} className="text-slate-500" />{" "}
                       {data.dob}
                     </span>
                   )}
                   {data?.gender && (
-                    <span className="flex items-center gap-1.5 text-slate-300 text-[13px]">
-                      <User size={13} className="text-slate-500" />{" "}
+                    <span className="flex items-center gap-1.5 text-slate-400 text-[12px]">
+                      <User size={12} className="text-slate-500" />{" "}
                       {data.gender}
                     </span>
                   )}
                 </div>
               </div>
-              <div className="shrink-0 text-right hidden md:block">
-                <p className="text-slate-600 text-[11px] font-bold uppercase tracking-widest">
+              <div className="shrink-0 hidden md:block text-right">
+                <p className="text-slate-500 text-[11px] font-medium uppercase tracking-widest">
                   Patient ID
                 </p>
-                <p className="text-white font-black text-2xl">
+                <p className="text-white text-xl font-semibold mt-0.5">
                   #{String(id).padStart(4, "0")}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="p-8 md:p-10">
-            <div className="flex items-center gap-2 mb-6">
-              <Stethoscope size={18} className="text-slate-400" />
-              <h2 className="text-slate-800 font-black text-[16px]">
+          {/* Patient Info */}
+          <div className="p-8 md:p-10 border-b border-slate-100">
+            <div className="flex items-center gap-2 mb-5">
+              <Stethoscope size={15} className="text-slate-400" />
+              <h2 className="text-slate-600 text-[13px] font-medium uppercase tracking-wider">
                 Patient Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
               <DetailItem icon={<Mail />} label="Email" value={data?.email} />
               <DetailItem
                 icon={<Phone />}
@@ -892,731 +911,764 @@ export default function PatientDetails() {
               <DetailItem
                 icon={<ShieldCheck />}
                 label="Status"
-                value={data?.discharge_date ? "Discharged" : "Active Patient"}
+                value={isCurrentlyDischarged ? "Discharged" : "Active Patient"}
               />
             </div>
           </div>
 
+          {/* Discharge Documents Panel */}
           {isEditing && (
-            <div className="px-6 md:px-10 pb-2">
-              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                <div className="px-6 py-4 bg-gradient-to-r from-[#0f172a] to-slate-700 flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-xl">
-                    <Zap size={16} className="text-white" />
+            <div className="p-8 md:p-10 border-b border-slate-100">
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-slate-800 text-[15px] font-semibold">
+                    {showCompletedDocuments
+                      ? "Latest Discharge Documents"
+                      : "Process Discharge Documents"}
+                  </h2>
+                  <p className="text-slate-400 text-[12px] mt-0.5">
+                    {showCompletedDocuments
+                      ? "Showing latest completed discharge documents"
+                      : "Attach patient documents and submit for processing"}
+                  </p>
+                </div>
+                {isCompleted && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <CheckCircle size={13} className="text-emerald-500" />
+                    <span className="text-emerald-600 text-[12px] font-medium">
+                      All Processed
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-white font-black text-[15px]">
-                      Process Discharge Documents
-                    </h3>
-                    <p className="text-white/60 text-[11px] mt-0.5">
-                      Attach patient documents and submit for processing
-                    </p>
+                )}
+                {isFailed && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 border border-red-200 rounded-lg">
+                    <AlertCircle size={13} className="text-red-400" />
+                    <span className="text-red-500 text-[12px] font-medium">
+                      Processing Failed
+                    </span>
                   </div>
-                  {isCompleted && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl">
-                      <CheckCircle size={13} className="text-emerald-400" />
-                      <span className="text-emerald-300 text-[12px] font-black">
-                        All Processed
-                      </span>
-                    </div>
-                  )}
-                  {isFailed && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-red-500/20 border border-red-500/40 rounded-xl">
-                      <AlertCircle size={13} className="text-red-400" />
-                      <span className="text-red-300 text-[12px] font-black">
-                        Processing Failed
-                      </span>
-                    </div>
-                  )}
-                  {isProcessing && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-xl">
-                      <Loader2
-                        size={13}
-                        className="text-amber-400 animate-spin"
+                )}
+                {isProcessing && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <Loader2
+                      size={13}
+                      className="text-amber-500 animate-spin"
+                    />
+                    <span className="text-amber-600 text-[12px] font-medium">
+                      Processing…
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid lg:grid-cols-5 gap-8">
+                {/* Left — dropzones */}
+                <div className="lg:col-span-3 flex flex-col gap-5">
+                  <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider">
+                    {showCompletedDocuments
+                      ? "Submitted Documents"
+                      : "Attach Documents"}
+                  </p>
+
+                  {showCompletedDocuments ? (
+                    <CompletedDocumentsSection
+                      patientId={id}
+                      data={data}
+                      dischargeId={dischargeId || data?.latest_discharge_id}
+                    />
+                  ) : (
+                    <>
+                      <DropZone
+                        type="reports"
+                        label="Medical Reports"
+                        icon={FlaskConical}
+                        files={files.reports}
+                        fileStatuses={fileStatuses.reports}
+                        fileErrors={fileErrors.reports}
+                        onAdd={(f) => addFiles("reports", f)}
+                        onRemove={(i) => removeFile("reports", i)}
+                        disabled={isProcessing}
+                        processedCount={processedCounts.reports}
                       />
-                      <span className="text-amber-300 text-[12px] font-black">
-                        Processing…
-                      </span>
+                      <DropZone
+                        type="bills"
+                        label="Bills"
+                        icon={Receipt}
+                        files={files.bills}
+                        fileStatuses={fileStatuses.bills}
+                        fileErrors={fileErrors.bills}
+                        onAdd={(f) => addFiles("bills", f)}
+                        onRemove={(i) => removeFile("bills", i)}
+                        disabled={isProcessing}
+                        processedCount={processedCounts.bills}
+                      />
+                      <DropZone
+                        type="prescriptions"
+                        label="Prescriptions"
+                        icon={Pill}
+                        files={files.prescriptions}
+                        fileStatuses={fileStatuses.prescriptions}
+                        fileErrors={fileErrors.prescriptions}
+                        onAdd={(f) => addFiles("prescriptions", f)}
+                        onRemove={(i) => removeFile("prescriptions", i)}
+                        disabled={isProcessing}
+                        processedCount={processedCounts.prescriptions}
+                      />
+                    </>
+                  )}
+
+                  {submitError && (
+                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
+                      <AlertCircle
+                        size={13}
+                        className="text-red-400 shrink-0 mt-0.5"
+                      />
+                      <p className="text-red-600 text-[12px]">{submitError}</p>
+                    </div>
+                  )}
+
+                  {isFailed && failInfo?.error && (
+                    <div className="p-4 bg-red-50 border border-red-100 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Ban size={13} className="text-red-400" />
+                        <span className="text-red-600 text-[13px] font-medium">
+                          Processing stopped
+                        </span>
+                      </div>
+                      <p className="text-red-500 text-[12px] leading-relaxed">
+                        {failInfo.error}
+                      </p>
+                      {errorDetails?.error_code && (
+                        <div className="mt-3 pt-3 border-t border-red-100 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-500 text-[11px] uppercase tracking-wider">
+                              Error Code:
+                            </span>
+                            <code className="text-red-500 text-[11px] font-mono bg-white px-2 py-0.5 rounded border border-red-100">
+                              {errorDetails.error_code}
+                            </code>
+                          </div>
+                          {errorDetails.message && (
+                            <p className="text-red-500 text-[11px]">
+                              {errorDetails.message}
+                            </p>
+                          )}
+                          {errorDetails.context && (
+                            <div className="text-[10px] bg-white p-2 rounded border border-red-100 text-red-500 font-mono whitespace-pre-wrap max-h-28 overflow-auto">
+                              {Object.entries(errorDetails.context)
+                                .map(([k, v]) => `${k}: ${v}`)
+                                .join("\n")}
+                            </div>
+                          )}
+                          {errorDetails.action && (
+                            <div className="flex items-start gap-2 p-2 bg-amber-50 rounded border border-amber-100">
+                              <Zap
+                                size={11}
+                                className="text-amber-500 shrink-0 mt-0.5"
+                              />
+                              <p className="text-amber-600 text-[11px]">
+                                {errorDetails.action}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {failInfo?.failed_at && (
+                        <p className="text-slate-400 text-[11px] mt-2">
+                          Failed at: {failInfo.failed_at.type} file #
+                          {failInfo.failed_at.index + 1}
+                        </p>
+                      )}
+                      <p className="text-slate-400 text-[11px] mt-1.5 italic">
+                        {failInfo?.message}
+                      </p>
                     </div>
                   )}
                 </div>
 
-                <div className="bg-slate-50 p-6">
-                  <div className="grid lg:grid-cols-5 gap-6">
-                    {/* ── Left col: Drop zones OR completed dropdowns ─────── */}
-                    <div className="lg:col-span-3 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        {isCompleted
-                          ? "Submitted Documents"
-                          : "Attach Documents"}
-                      </p>
+                {/* Right — timeline + actions */}
+                <div className="lg:col-span-2 flex flex-col gap-5">
+                  <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider">
+                    Status
+                  </p>
 
-                      {isCompleted ? (
-                        <CompletedDocumentsSection
-                          patientId={id}
-                          data={data}
-                          dischargeId={dischargeId}
-                        />
-                      ) : (
-                        <>
-                          <DropZone
-                            type="reports"
-                            label="Medical Reports"
-                            icon={FlaskConical}
-                            files={files.reports}
-                            fileStatuses={fileStatuses.reports}
-                            fileErrors={fileErrors.reports}
-                            onAdd={(f) => addFiles("reports", f)}
-                            onRemove={(i) => removeFile("reports", i)}
-                            disabled={isProcessing}
-                            processedCount={processedCounts.reports}
-                          />
-                          <DropZone
-                            type="bills"
-                            label="Bills"
-                            icon={Receipt}
-                            files={files.bills}
-                            fileStatuses={fileStatuses.bills}
-                            fileErrors={fileErrors.bills}
-                            onAdd={(f) => addFiles("bills", f)}
-                            onRemove={(i) => removeFile("bills", i)}
-                            disabled={isProcessing}
-                            processedCount={processedCounts.bills}
-                          />
-                          <DropZone
-                            type="prescriptions"
-                            label="Prescriptions"
-                            icon={Pill}
-                            files={files.prescriptions}
-                            fileStatuses={fileStatuses.prescriptions}
-                            fileErrors={fileErrors.prescriptions}
-                            onAdd={(f) => addFiles("prescriptions", f)}
-                            onRemove={(i) => removeFile("prescriptions", i)}
-                            disabled={isProcessing}
-                            processedCount={processedCounts.prescriptions}
-                          />
-                        </>
-                      )}
-
-                      {submitError && (
-                        <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                          <AlertCircle
-                            size={15}
-                            className="text-red-500 shrink-0 mt-0.5"
-                          />
-                          <p className="text-red-700 text-[13px] font-semibold">
-                            {submitError}
-                          </p>
-                        </div>
-                      )}
-
-                      {isFailed && failInfo?.error && (
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-2xl">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Ban size={14} className="text-red-500" />
-                            <span className="text-red-700 font-black text-[13px]">
-                              Processing stopped
-                            </span>
-                          </div>
-                          <p className="text-red-600 text-[12px] font-medium leading-relaxed">
-                            {failInfo.error}
-                          </p>
-                          {errorDetails?.error_code && (
-                            <div className="mt-3 pt-3 border-t border-red-200 space-y-2">
-                              <div className="flex items-start gap-2">
-                                <span className="text-red-700 font-bold text-[11px] uppercase tracking-widest">
-                                  Error Code:
-                                </span>
-                                <code className="text-red-600 text-[11px] font-mono bg-white px-2 py-1 rounded border border-red-200">
-                                  {errorDetails.error_code}
-                                </code>
-                              </div>
-                              {errorDetails.message && (
-                                <p className="text-red-700 text-[11px] font-semibold">
-                                  {errorDetails.message}
-                                </p>
-                              )}
-                              {errorDetails.context && (
-                                <div className="mt-2 text-[10px] bg-white p-2 rounded border border-red-200 text-red-700 font-mono whitespace-pre-wrap max-h-32 overflow-auto">
-                                  {Object.entries(errorDetails.context)
-                                    .map(([key, val]) => `${key}: ${val}`)
-                                    .join("\n")}
-                                </div>
-                              )}
-                              {errorDetails.action && (
-                                <div className="mt-2 flex items-start gap-2 p-2 bg-amber-50 rounded border border-amber-200">
-                                  <Zap
-                                    size={12}
-                                    className="text-amber-600 shrink-0 mt-0.5"
-                                  />
-                                  <p className="text-amber-700 text-[11px] font-semibold">
-                                    {errorDetails.action}
-                                  </p>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          {failInfo?.failed_at && (
-                            <p className="text-red-500 text-[11px] mt-1 font-semibold">
-                              Failed at: {failInfo.failed_at.type} file #
-                              {failInfo.failed_at.index + 1}
-                            </p>
-                          )}
-                          <p className="text-slate-500 text-[11px] mt-2 italic">
-                            {failInfo?.message}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* ── Right col: Timeline + Actions ─────────────────────── */}
-                    <div className="lg:col-span-2 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        Status
-                      </p>
-
-                      <div className="rounded-2xl bg-white border border-slate-200 p-4">
-                        <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3">
-                          Document Progress
+                  {showCompletedDocuments && !isProcessing && !isFailed && (
+                    <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-4">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle size={14} className="text-emerald-500" />
+                        <p className="text-emerald-700 text-[13px] font-medium">
+                          Latest discharge is already processed
                         </p>
-                        <div className="flex flex-col gap-3">
-                          <TimelineRow
-                            icon={FlaskConical}
-                            label="Reports"
-                            total={timelineTotal.reports}
-                            processed={processedCounts.reports}
-                            isActive={isProcessing && activeType === "reports"}
-                            isFailed={
-                              isFailed && failInfo?.failed_at?.type === "report"
-                            }
-                            isSkipped={timelineTotal.reports === 0}
-                          />
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-                          <TimelineRow
-                            icon={Receipt}
-                            label="Bills"
-                            total={timelineTotal.bills}
-                            processed={processedCounts.bills}
-                            isActive={isProcessing && activeType === "bills"}
-                            isFailed={
-                              isFailed && failInfo?.failed_at?.type === "bill"
-                            }
-                            isSkipped={timelineTotal.bills === 0}
-                          />
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-                          <TimelineRow
-                            icon={Pill}
-                            label="Prescriptions"
-                            total={timelineTotal.prescriptions}
-                            processed={processedCounts.prescriptions}
-                            isActive={
-                              isProcessing && activeType === "prescriptions"
-                            }
-                            isFailed={
-                              isFailed &&
-                              failInfo?.failed_at?.type === "prescription"
-                            }
-                            isSkipped={timelineTotal.prescriptions === 0}
-                          />
-                        </div>
                       </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          {
-                            label: "Reports",
-                            val: processedCounts.reports,
-                            total: timelineTotal.reports,
-                            color: "blue",
-                          },
-                          {
-                            label: "Bills",
-                            val: processedCounts.bills,
-                            total: timelineTotal.bills,
-                            color: "slate",
-                          },
-                          {
-                            label: "Rx",
-                            val: processedCounts.prescriptions,
-                            total: timelineTotal.prescriptions,
-                            color: "teal",
-                          },
-                        ].map(({ label, val, total, color }) => (
-                          <div
-                            key={label}
-                            className="bg-white border border-slate-200 rounded-2xl p-3 text-center"
-                          >
-                            <p
-                              className={`text-[20px] font-black text-${color}-600 tabular-nums leading-none`}
-                            >
-                              {val}
-                            </p>
-                            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mt-1">
-                              {label}
-                            </p>
-                            {total > 0 && val === total && (
-                              <CheckCircle
-                                size={11}
-                                className="text-emerald-500 mx-auto mt-1"
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-
-                      {!isCompleted && !isFailed && (
-                        <button
-                          onClick={() => {
-                            if (isProcessing) return;
-                            setShowProcessConfirm(true);
-                          }}
-                          disabled={isProcessing || !anyFiles}
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isProcessing ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <Zap size={15} />
-                          )}
-                          {isProcessing
-                            ? "Processing…"
-                            : "Process All Documents"}
-                        </button>
-                      )}
-
-                      {!isCompleted && isFailed && (
-                        <button
-                          onClick={handleRetry}
-                          disabled={isProcessing}
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isProcessing ? (
-                            <Loader2 size={15} className="animate-spin" />
-                          ) : (
-                            <RefreshCw size={15} />
-                          )}
-                          {isProcessing ? "Retrying…" : "Retry Upload"}
-                        </button>
-                      )}
-
-                      {isCompleted && (
-                        <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
-                          <ShieldCheck
-                            size={18}
-                            className="text-emerald-600 shrink-0"
-                          />
-                          <div>
-                            <p className="text-emerald-700 font-black text-[13px]">
-                              All documents processed
-                            </p>
-                            <p className="text-emerald-600 text-[11px]">
-                              Patient is ready for discharge
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                      <p className="text-emerald-600 text-[11px] mt-2">
+                        Click Admit to start a fresh upload and processing
+                        cycle.
+                      </p>
                     </div>
-                  </div>
+                  )}
+
+                  {!showCompletedDocuments && (
+                    <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                      <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-4">
+                        Document Progress
+                      </p>
+                      <div className="flex flex-col gap-3">
+                        <TimelineRow
+                          icon={FlaskConical}
+                          label="Reports"
+                          total={timelineTotal.reports}
+                          processed={processedCounts.reports}
+                          isActive={isProcessing && activeType === "reports"}
+                          isFailed={
+                            isFailed && failInfo?.failed_at?.type === "report"
+                          }
+                          isSkipped={timelineTotal.reports === 0}
+                        />
+                        <div className="ml-1 w-px h-3 bg-slate-200 rounded-full" />
+                        <TimelineRow
+                          icon={Receipt}
+                          label="Bills"
+                          total={timelineTotal.bills}
+                          processed={processedCounts.bills}
+                          isActive={isProcessing && activeType === "bills"}
+                          isFailed={
+                            isFailed && failInfo?.failed_at?.type === "bill"
+                          }
+                          isSkipped={timelineTotal.bills === 0}
+                        />
+                        <div className="ml-1 w-px h-3 bg-slate-200 rounded-full" />
+                        <TimelineRow
+                          icon={Pill}
+                          label="Prescriptions"
+                          total={timelineTotal.prescriptions}
+                          processed={processedCounts.prescriptions}
+                          isActive={
+                            isProcessing && activeType === "prescriptions"
+                          }
+                          isFailed={
+                            isFailed &&
+                            failInfo?.failed_at?.type === "prescription"
+                          }
+                          isSkipped={timelineTotal.prescriptions === 0}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {!showCompletedDocuments && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        {
+                          label: "Reports",
+                          val: processedCounts.reports,
+                          total: timelineTotal.reports,
+                          color: "text-blue-500",
+                        },
+                        {
+                          label: "Bills",
+                          val: processedCounts.bills,
+                          total: timelineTotal.bills,
+                          color: "text-slate-500",
+                        },
+                        {
+                          label: "Rx",
+                          val: processedCounts.prescriptions,
+                          total: timelineTotal.prescriptions,
+                          color: "text-teal-500",
+                        },
+                      ].map(({ label, val, total, color }) => (
+                        <div
+                          key={label}
+                          className="bg-slate-50 border border-slate-100 rounded-xl p-3 text-center"
+                        >
+                          <p
+                            className={`text-[22px] font-semibold ${color} tabular-nums leading-none`}
+                          >
+                            {val}
+                          </p>
+                          <p className="text-slate-400 text-[10px] font-medium uppercase tracking-wider mt-1">
+                            {label}
+                          </p>
+                          {total > 0 && val === total && (
+                            <CheckCircle
+                              size={10}
+                              className="text-emerald-400 mx-auto mt-1"
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!showCompletedDocuments && !isFailed && (
+                    <button
+                      onClick={() => {
+                        if (isProcessing) return;
+                        setShowProcessConfirm(true);
+                      }}
+                      disabled={isProcessing || !anyFiles}
+                      className="w-full py-2.5 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 bg-slate-800 text-white hover:bg-slate-700 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <Zap size={13} />
+                      )}
+                      {isProcessing ? "Processing…" : "Process All Documents"}
+                    </button>
+                  )}
+
+                  {!isCompleted && isFailed && (
+                    <button
+                      onClick={handleRetry}
+                      disabled={isProcessing}
+                      className="w-full py-2.5 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 bg-amber-500 text-white hover:bg-amber-600 transition-all disabled:opacity-50"
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={13} className="animate-spin" />
+                      ) : (
+                        <RefreshCw size={13} />
+                      )}
+                      {isProcessing ? "Retrying…" : "Retry Upload"}
+                    </button>
+                  )}
+
+                  {isCompleted && (
+                    <div className="flex items-center gap-2.5 p-3.5 bg-emerald-50 border border-emerald-100 rounded-xl">
+                      <ShieldCheck
+                        size={16}
+                        className="text-emerald-500 shrink-0"
+                      />
+                      <div>
+                        <p className="text-emerald-700 text-[13px] font-medium">
+                          All documents processed
+                        </p>
+                        <p className="text-emerald-500 text-[11px] mt-0.5">
+                          Patient is ready for discharge
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
+          {/* Generate Documents Panel */}
           {isEditing && (
-            <div className="px-6 md:px-10 pb-8">
-              <div className="rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
-                <div className="px-6 py-4 bg-gradient-to-r from-slate-800 to-slate-900 flex items-center gap-3">
-                  <div className="p-2 bg-white/10 rounded-xl">
-                    <FileText size={16} className="text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-white font-black text-[15px]">
-                      Generate Patient Documents
-                    </h3>
-                    <p className="text-white/60 text-[11px] mt-0.5">
-                      Upload discharge summary and generate patient-friendly &
-                      insurance-ready documents
-                    </p>
-                  </div>
-                  {summaryStatus === "completed" && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/40 rounded-xl">
-                      <CheckCircle size={13} className="text-emerald-400" />
-                      <span className="text-emerald-300 text-[12px] font-black">
-                        Summary Uploaded
-                      </span>
-                    </div>
-                  )}
-                  {summaryStatus === "uploading" && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-xl">
-                      <Loader2
-                        size={13}
-                        className="text-amber-400 animate-spin"
-                      />
-                      <span className="text-amber-300 text-[12px] font-black">
-                        Uploading…
-                      </span>
-                    </div>
-                  )}
-                  {summaryStatus === "processing" && (
-                    <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-amber-500/20 border border-amber-500/40 rounded-xl">
-                      <Loader2
-                        size={13}
-                        className="text-amber-400 animate-spin"
-                      />
-                      <span className="text-amber-300 text-[12px] font-black">
-                        Please wait 2-3 minutes...
-                      </span>
-                    </div>
-                  )}
+            <div className="p-8 md:p-10 border-b border-slate-100">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-slate-800 text-[15px] font-semibold">
+                    Generate Patient Documents
+                  </h2>
+                  <p className="text-slate-400 text-[12px] mt-0.5">
+                    Upload discharge summary and generate shareable documents
+                  </p>
                 </div>
+                {summaryStatus === "completed" && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <CheckCircle size={13} className="text-emerald-500" />
+                    <span className="text-emerald-600 text-[12px] font-medium">
+                      Summary Uploaded
+                    </span>
+                  </div>
+                )}
+                {(summaryStatus === "uploading" ||
+                  summaryStatus === "processing") && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                    <Loader2
+                      size={13}
+                      className="text-amber-500 animate-spin"
+                    />
+                    <span className="text-amber-600 text-[12px] font-medium">
+                      {summaryStatus === "processing"
+                        ? "Please wait 2–3 minutes…"
+                        : "Uploading…"}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-                <div className="bg-slate-50 p-6">
-                  <div className="grid lg:grid-cols-5 gap-6">
-                    <div className="lg:col-span-3 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        Upload Discharge Summary
-                      </p>
-                      <div className="flex flex-col gap-3">
-                        <div className="flex items-center gap-2">
-                          <div className="p-1.5 rounded-lg text-indigo-600 bg-indigo-100">
-                            <FileText size={14} />
-                          </div>
-                          <span className="text-[13px] font-black uppercase tracking-wider text-indigo-700">
-                            Discharge Summary
-                          </span>
-                          <span className="ml-auto text-[11px] text-slate-400 font-semibold">
-                            {summaryFile ? "1/1 file" : "0/1 file"}
-                          </span>
-                        </div>
-                        <div
-                          onDragOver={(e) => {
-                            e.preventDefault();
-                            if (
-                              summaryStatus === "uploading" ||
-                              summaryStatus === "processing"
-                            )
-                              return;
-                            e.currentTarget.classList.add(
-                              "border-slate-400",
-                              "bg-slate-100",
-                            );
-                          }}
-                          onDragLeave={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove(
-                              "border-slate-400",
-                              "bg-slate-100",
-                            );
-                          }}
-                          onDrop={(e) => {
-                            e.preventDefault();
-                            e.currentTarget.classList.remove(
-                              "border-slate-400",
-                              "bg-slate-100",
-                            );
-                            if (
-                              summaryStatus === "uploading" ||
-                              summaryStatus === "processing"
-                            )
-                              return;
-                            const file = e.dataTransfer.files[0];
-                            if (
-                              file &&
-                              file.name.toLowerCase().endsWith(".pdf")
-                            ) {
-                              handleSummaryUpload(file);
-                            } else {
-                              setSummaryError("Only PDF files are allowed");
-                            }
-                          }}
-                          className={`relative rounded-2xl border-2 border-dashed transition-all duration-200 ${summaryStatus === "uploading" || summaryStatus === "processing" ? "opacity-50 cursor-not-allowed border-slate-200 bg-slate-50" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
-                        >
-                          <input
-                            id="summary-upload"
-                            type="file"
-                            accept=".pdf"
-                            disabled={
-                              summaryStatus === "uploading" ||
-                              summaryStatus === "processing"
-                            }
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files[0];
-                              if (file) handleSummaryUpload(file);
-                            }}
-                          />
-                          {!summaryFile ? (
-                            <label
-                              htmlFor="summary-upload"
-                              className="flex flex-col items-center justify-center py-6 gap-2 cursor-pointer"
-                            >
-                              <Upload size={22} className="text-slate-300" />
-                              <p className="text-slate-400 text-[13px] font-semibold">
-                                Drop PDF or click to browse
-                              </p>
-                              <p className="text-slate-300 text-[11px]">
-                                Single discharge summary file
-                              </p>
-                            </label>
-                          ) : (
-                            <div className="p-3">
-                              <div
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[12px] font-semibold ${summaryStatus === "completed" ? "border-emerald-200 bg-emerald-50/60 text-emerald-800" : summaryStatus === "failed" ? "border-red-200 bg-red-50/60 text-red-700" : summaryStatus === "uploading" || summaryStatus === "processing" ? "border-amber-200 bg-amber-50/60 text-amber-800" : "border-slate-200 bg-white text-slate-700"}`}
-                              >
-                                <FileText
-                                  size={12}
-                                  className="shrink-0 opacity-60"
-                                />
-                                <span className="truncate flex-1">
-                                  {summaryFile.name}
-                                </span>
-                                {summaryStatus === "completed" && (
-                                  <CheckCircle
-                                    size={12}
-                                    className="text-emerald-500 shrink-0"
-                                  />
-                                )}
-                                {summaryStatus === "failed" && (
-                                  <AlertCircle
-                                    size={12}
-                                    className="text-red-500 shrink-0"
-                                  />
-                                )}
-                                {(summaryStatus === "uploading" ||
-                                  summaryStatus === "processing") && (
-                                  <Loader2
-                                    size={12}
-                                    className="animate-spin text-amber-500 shrink-0"
-                                  />
-                                )}
-                                {summaryStatus !== "uploading" &&
-                                  summaryStatus !== "processing" && (
-                                    <button
-                                      onClick={removeSummaryFile}
-                                      className="ml-auto text-slate-400 hover:text-red-500 transition-colors"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                  )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        {isGeneratingPatientDoc && (
-                          <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                            <Loader2
-                              size={15}
-                              className="text-amber-600 shrink-0 mt-0.5 animate-spin"
-                            />
-                            <p className="text-amber-700 text-[13px] font-semibold">
-                              Patient-friendly report is generating. Please wait
-                              2-3 minutes and do not close this page.
-                            </p>
-                          </div>
-                        )}
-                        {summaryStatus === "uploading" && (
-                          <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between text-[11px] font-semibold">
-                              <span className="text-slate-500">
-                                Uploading...
-                              </span>
-                              <span className="text-amber-600">
-                                {summaryProgress}%
-                              </span>
-                            </div>
-                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-400 rounded-full transition-all duration-300"
-                                style={{ width: `${summaryProgress}%` }}
-                              />
-                            </div>
-                          </div>
-                        )}
-                        {summaryError && (
-                          <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
-                            <AlertCircle
-                              size={15}
-                              className="text-red-500 shrink-0 mt-0.5"
-                            />
-                            <p className="text-red-700 text-[13px] font-semibold">
-                              {summaryError}
-                            </p>
-                          </div>
-                        )}
+              <div className="grid lg:grid-cols-5 gap-8">
+                {/* Left */}
+                <div className="lg:col-span-3 flex flex-col gap-5">
+                  <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider">
+                    Upload Discharge Summary
+                  </p>
+
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1 rounded-md bg-indigo-50 text-indigo-500">
+                        <FileText size={13} />
                       </div>
-
-                      {(patientFriendlyUrl || insuranceReadyUrl) && (
-                        <div className="flex flex-col gap-3 mt-4">
-                          <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                            Generated Documents
-                          </p>
-                          {patientFriendlyUrl && (
-                            <a
-                              href={patientFriendlyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white border border-emerald-200 rounded-2xl hover:border-emerald-400 transition-all group"
-                            >
-                              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-100 transition-all">
-                                <FileText size={18} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-slate-800 font-bold text-[14px]">
-                                  Patient-Friendly Document
-                                </p>
-                                <p className="text-slate-500 text-[12px] truncate">
-                                  Click to view or download
-                                </p>
-                              </div>
-                              <CheckCircle
-                                size={18}
-                                className="text-emerald-500 shrink-0"
-                              />
-                            </a>
-                          )}
-                          {insuranceReadyUrl && (
-                            <a
-                              href={insuranceReadyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="flex items-center gap-3 p-4 bg-white border border-blue-200 rounded-2xl hover:border-blue-400 transition-all group"
-                            >
-                              <div className="p-2.5 bg-blue-50 text-blue-600 rounded-xl group-hover:bg-blue-100 transition-all">
-                                <Receipt size={18} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-slate-800 font-bold text-[14px]">
-                                  Insurance-Ready Document
-                                </p>
-                                <p className="text-slate-500 text-[12px] truncate">
-                                  Click to view or download
-                                </p>
-                              </div>
-                              <CheckCircle
-                                size={18}
-                                className="text-blue-500 shrink-0"
-                              />
-                            </a>
-                          )}
-                        </div>
-                      )}
+                      <span className="text-[12px] font-semibold tracking-wide uppercase text-indigo-600">
+                        Discharge Summary
+                      </span>
+                      <span className="ml-auto text-[11px] text-slate-400">
+                        {summaryFile ? "1 / 1" : "0 / 1"}
+                      </span>
                     </div>
-
-                    <div className="lg:col-span-2 flex flex-col gap-5">
-                      <p className="text-slate-500 font-black text-[11px] uppercase tracking-widest">
-                        Generate Documents
-                      </p>
-                      {!isDocumentProcessingCompleted && (
-                        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
-                          <AlertCircle
-                            size={15}
-                            className="text-amber-600 shrink-0 mt-0.5"
-                          />
-                          <p className="text-amber-700 text-[13px] font-semibold">
-                            Process all documents first to unlock
-                            patient-friendly summaries and insurance-ready
-                            reports.
+                    <div
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (
+                          summaryStatus === "uploading" ||
+                          summaryStatus === "processing"
+                        )
+                          return;
+                        e.currentTarget.classList.add("border-slate-400");
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove("border-slate-400");
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        e.currentTarget.classList.remove("border-slate-400");
+                        if (
+                          summaryStatus === "uploading" ||
+                          summaryStatus === "processing"
+                        )
+                          return;
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.name.toLowerCase().endsWith(".pdf")) {
+                          handleSummaryUpload(file);
+                        } else {
+                          setSummaryError("Only PDF files are allowed");
+                        }
+                      }}
+                      className={`relative rounded-xl border-2 border-dashed transition-all duration-200 ${summaryStatus === "uploading" || summaryStatus === "processing" ? "opacity-40 cursor-not-allowed border-slate-200 bg-slate-50" : "border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:bg-slate-50"}`}
+                    >
+                      <input
+                        id="summary-upload"
+                        type="file"
+                        accept=".pdf"
+                        disabled={
+                          summaryStatus === "uploading" ||
+                          summaryStatus === "processing"
+                        }
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) handleSummaryUpload(file);
+                        }}
+                      />
+                      {!summaryFile ? (
+                        <label
+                          htmlFor="summary-upload"
+                          className="flex flex-col items-center justify-center py-8 gap-1.5 cursor-pointer"
+                        >
+                          <Upload size={18} className="text-slate-300" />
+                          <p className="text-slate-400 text-[12px] font-medium">
+                            Drop PDF or click to browse
                           </p>
-                        </div>
-                      )}
-                      <div className="rounded-2xl bg-white border border-slate-200 p-4">
-                        <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider mb-3">
-                          Document Status
-                        </p>
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${summaryStatus === "completed" ? "bg-emerald-500 shadow-emerald-300 shadow-sm" : summaryStatus === "failed" ? "bg-red-500 shadow-red-300 shadow-sm" : summaryStatus === "uploading" || summaryStatus === "processing" ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm" : "bg-slate-300"}`}
+                          <p className="text-slate-300 text-[11px]">
+                            Single discharge summary file
+                          </p>
+                        </label>
+                      ) : (
+                        <div className="p-2.5">
+                          <div
+                            className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-[12px] font-medium ${summaryStatus === "completed" ? "border-emerald-200 bg-emerald-50 text-emerald-700" : summaryStatus === "failed" ? "border-red-200 bg-red-50 text-red-600" : "border-amber-200 bg-amber-50 text-amber-700"}`}
+                          >
+                            <FileText
+                              size={11}
+                              className="shrink-0 opacity-50"
                             />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Discharge Summary
+                            <span className="truncate flex-1">
+                              {summaryFile.name}
                             </span>
                             {summaryStatus === "completed" && (
                               <CheckCircle
-                                size={14}
-                                className="text-emerald-500 ml-auto"
+                                size={11}
+                                className="text-emerald-500 shrink-0"
                               />
                             )}
-                          </div>
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${patientFriendlyUrl ? "bg-emerald-500 shadow-emerald-300 shadow-sm" : isGeneratingPatientDoc ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm" : "bg-slate-300"}`}
-                            />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Patient-Friendly
-                            </span>
-                            {patientFriendlyUrl && (
-                              <CheckCircle
-                                size={14}
-                                className="text-emerald-500 ml-auto"
+                            {summaryStatus === "failed" && (
+                              <AlertCircle
+                                size={11}
+                                className="text-red-400 shrink-0"
                               />
                             )}
-                          </div>
-                          <div className="ml-1.5 w-0.5 h-3 bg-slate-200 rounded-full" />
-                          <div className="flex items-center gap-2">
-                            <div
-                              className={`w-3 h-3 rounded-full shrink-0 ${insuranceReadyUrl ? "bg-emerald-500 shadow-emerald-300 shadow-sm" : isGeneratingInsuranceDoc ? "bg-amber-400 animate-pulse shadow-amber-300 shadow-sm" : "bg-slate-300"}`}
-                            />
-                            <span className="text-[13px] text-slate-600 font-semibold">
-                              Insurance-Ready
-                            </span>
-                            {insuranceReadyUrl && (
-                              <CheckCircle
-                                size={14}
-                                className="text-emerald-500 ml-auto"
+                            {(summaryStatus === "uploading" ||
+                              summaryStatus === "processing") && (
+                              <Loader2
+                                size={11}
+                                className="animate-spin text-amber-400 shrink-0"
                               />
                             )}
+                            {summaryStatus !== "uploading" &&
+                              summaryStatus !== "processing" && (
+                                <button
+                                  onClick={removeSummaryFile}
+                                  className="ml-auto text-slate-300 hover:text-red-400 transition-colors"
+                                >
+                                  <X size={11} />
+                                </button>
+                              )}
                           </div>
                         </div>
+                      )}
+                    </div>
+
+                    {isGeneratingPatientDoc && (
+                      <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                        <Loader2
+                          size={13}
+                          className="text-amber-500 shrink-0 mt-0.5 animate-spin"
+                        />
+                        <p className="text-amber-700 text-[12px]">
+                          Patient-friendly report is generating. Please wait 2–3
+                          minutes.
+                        </p>
                       </div>
-                      <div className="flex flex-col gap-3 mt-auto">
-                        <button
-                          onClick={handleGeneratePatientFriendly}
-                          disabled={
-                            !isDocumentProcessingCompleted ||
-                            isGeneratingPatientDoc ||
-                            isGeneratingInsuranceDoc
-                          }
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-emerald-500 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingPatientDoc ? (
-                            <>
-                              <Loader2 size={15} className="animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <FileText size={15} />
-                              {patientFriendlyUrl
-                                ? "Regenerate"
-                                : "Generate"}{" "}
-                              Patient-Friendly
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={handleGenerateInsuranceReady}
-                          disabled={
-                            !isDocumentProcessingCompleted ||
-                            isGeneratingPatientDoc ||
-                            isGeneratingInsuranceDoc
-                          }
-                          className="w-full py-3 rounded-2xl font-black text-[14px] flex items-center justify-center gap-2 bg-blue-500 text-white hover:bg-blue-600 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingInsuranceDoc ? (
-                            <>
-                              <Loader2 size={15} className="animate-spin" />
-                              Generating...
-                            </>
-                          ) : (
-                            <>
-                              <Receipt size={15} />
-                              Generate Insurance-Ready Doc
-                            </>
-                          )}
-                        </button>
+                    )}
+                    {summaryStatus === "uploading" && (
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-400">Uploading…</span>
+                          <span className="text-amber-500">
+                            {summaryProgress}%
+                          </span>
+                        </div>
+                        <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-400 rounded-full transition-all duration-300"
+                            style={{ width: `${summaryProgress}%` }}
+                          />
+                        </div>
                       </div>
+                    )}
+                    {summaryError && (
+                      <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-100 rounded-xl">
+                        <AlertCircle
+                          size={13}
+                          className="text-red-400 shrink-0 mt-0.5"
+                        />
+                        <p className="text-red-600 text-[12px]">
+                          {summaryError}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {(patientFriendlyUrl || insuranceReadyUrl) && (
+                    <div className="flex flex-col gap-2.5 pt-2">
+                      <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider">
+                        Generated Documents
+                      </p>
+                      {patientFriendlyUrl && (
+                        <a
+                          href={patientFriendlyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3.5 bg-white border border-slate-100 rounded-xl hover:border-emerald-200 hover:shadow-sm transition-all group"
+                        >
+                          <div className="p-2 bg-emerald-50 text-emerald-500 rounded-lg group-hover:bg-emerald-100 transition-all">
+                            <FileText size={14} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-slate-700 text-[13px] font-medium">
+                              Patient-Friendly Document
+                            </p>
+                            <p className="text-slate-400 text-[11px]">
+                              Click to view or download
+                            </p>
+                          </div>
+                          <CheckCircle
+                            size={14}
+                            className="text-emerald-400 shrink-0"
+                          />
+                        </a>
+                      )}
+                      {insuranceReadyUrl && (
+                        <a
+                          href={insuranceReadyUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 p-3.5 bg-white border border-slate-100 rounded-xl hover:border-blue-200 hover:shadow-sm transition-all group"
+                        >
+                          <div className="p-2 bg-blue-50 text-blue-500 rounded-lg group-hover:bg-blue-100 transition-all">
+                            <Receipt size={14} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-slate-700 text-[13px] font-medium">
+                              Insurance-Ready Document
+                            </p>
+                            <p className="text-slate-400 text-[11px]">
+                              Click to view or download
+                            </p>
+                          </div>
+                          <CheckCircle
+                            size={14}
+                            className="text-blue-400 shrink-0"
+                          />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right */}
+                <div className="lg:col-span-2 flex flex-col gap-5">
+                  <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider">
+                    Generate Documents
+                  </p>
+
+                  {!isDocumentProcessingCompleted && (
+                    <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                      <AlertCircle
+                        size={13}
+                        className="text-amber-500 shrink-0 mt-0.5"
+                      />
+                      <p className="text-amber-700 text-[12px]">
+                        Process all documents first to unlock document
+                        generation.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl bg-slate-50 border border-slate-100 p-4">
+                    <p className="text-slate-400 text-[11px] font-medium uppercase tracking-wider mb-4">
+                      Document Status
+                    </p>
+                    <div className="flex flex-col gap-3">
+                      {[
+                        {
+                          label: "Discharge Summary",
+                          active:
+                            summaryStatus === "uploading" ||
+                            summaryStatus === "processing",
+                          done: summaryStatus === "completed",
+                        },
+                        {
+                          label: "Patient-Friendly",
+                          active: isGeneratingPatientDoc,
+                          done: Boolean(patientFriendlyUrl),
+                        },
+                        {
+                          label: "Insurance-Ready",
+                          active: isGeneratingInsuranceDoc,
+                          done: Boolean(insuranceReadyUrl),
+                        },
+                      ].map((item, idx) => (
+                        <div key={item.label}>
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`w-2 h-2 rounded-full shrink-0 ${item.done ? "bg-emerald-400" : item.active ? "bg-amber-400 animate-pulse" : "bg-slate-200"}`}
+                            />
+                            <span className="text-[12px] text-slate-600 flex-1">
+                              {item.label}
+                            </span>
+                            {item.done && (
+                              <CheckCircle
+                                size={12}
+                                className="text-emerald-400"
+                              />
+                            )}
+                            {item.active && (
+                              <Loader2
+                                size={12}
+                                className="text-amber-400 animate-spin"
+                              />
+                            )}
+                          </div>
+                          {idx < 2 && (
+                            <div className="ml-1 w-px h-3 bg-slate-200 rounded-full mt-1" />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2.5 mt-auto">
+                    {/* Patient-Friendly button */}
+                    <div className="relative group/btn">
+                      <button
+                        onClick={handleGeneratePatientFriendly}
+                        disabled={
+                          !isDocumentProcessingCompleted ||
+                          isGeneratingPatientDoc ||
+                          isGeneratingInsuranceDoc
+                        }
+                        className={`w-full py-2.5 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 transition-all
+                          ${
+                            !isDocumentProcessingCompleted
+                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                              : "bg-emerald-500 text-white hover:bg-emerald-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          }`}
+                      >
+                        {isGeneratingPatientDoc ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin" />
+                            Generating…
+                          </>
+                        ) : !isDocumentProcessingCompleted ? (
+                          <>
+                            <Lock size={13} />
+                            {patientFriendlyUrl
+                              ? "Regenerate"
+                              : "Generate"}{" "}
+                            Patient-Friendly
+                          </>
+                        ) : (
+                          <>
+                            <FileText size={13} />
+                            {patientFriendlyUrl
+                              ? "Regenerate"
+                              : "Generate"}{" "}
+                            Patient-Friendly
+                          </>
+                        )}
+                      </button>
+                      {!isDocumentProcessingCompleted && (
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/btn:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-[11px] rounded-lg whitespace-nowrap shadow-lg z-20">
+                          <Lock size={10} />
+                          Process all documents first
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Insurance-Ready button */}
+                    <div className="relative group/btn2">
+                      <button
+                        onClick={handleGenerateInsuranceReady}
+                        disabled={
+                          !isDocumentProcessingCompleted ||
+                          isGeneratingPatientDoc ||
+                          isGeneratingInsuranceDoc
+                        }
+                        className={`w-full py-2.5 rounded-xl text-[13px] font-medium flex items-center justify-center gap-2 transition-all
+                          ${
+                            !isDocumentProcessingCompleted
+                              ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                              : "bg-blue-500 text-white hover:bg-blue-600 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                          }`}
+                      >
+                        {isGeneratingInsuranceDoc ? (
+                          <>
+                            <Loader2 size={13} className="animate-spin" />
+                            Generating…
+                          </>
+                        ) : !isDocumentProcessingCompleted ? (
+                          <>
+                            <Lock size={13} />
+                            Generate Insurance-Ready Doc
+                          </>
+                        ) : (
+                          <>
+                            <Receipt size={13} />
+                            Generate Insurance-Ready Doc
+                          </>
+                        )}
+                      </button>
+                      {!isDocumentProcessingCompleted && (
+                        <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/btn2:flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 text-white text-[11px] rounded-lg whitespace-nowrap shadow-lg z-20">
+                          <Lock size={10} />
+                          Process all documents first
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1624,26 +1676,47 @@ export default function PatientDetails() {
             </div>
           )}
 
-          <div className="p-8 md:p-10 pt-6 flex flex-col md:flex-row gap-3">
+          {/* Footer Actions */}
+          <div className="p-6 md:px-10 flex flex-col md:flex-row gap-2.5">
             <button
               onClick={() => setIsEditing(!isEditing)}
-              className={`flex-1 py-3.5 rounded-2xl font-bold text-[15px] transition-all flex items-center justify-center gap-2 ${isEditing ? "bg-white text-slate-700 border border-slate-300 hover:border-slate-500" : "bg-[#0f172a] text-white hover:bg-slate-800 shadow-lg shadow-slate-900/10"}`}
+              className={`flex-1 py-3 rounded-xl text-[13px] font-medium transition-all flex items-center justify-center gap-2 ${
+                isEditing
+                  ? "bg-slate-50 text-slate-600 border border-slate-200 hover:border-slate-300"
+                  : "bg-slate-800 text-white hover:bg-slate-700 shadow-sm"
+              }`}
             >
               {isEditing ? (
                 <>
-                  <ChevronUp size={16} /> Close Panel
+                  <ChevronUp size={14} /> Close Panel
                 </>
               ) : (
                 <>
-                  <FileText size={16} /> Manage Discharge Documents
+                  <FileText size={14} />
+                  {isCurrentlyDischarged
+                    ? "View Latest Discharge Documents"
+                    : "Manage Discharge Documents"}
                 </>
               )}
             </button>
-            {data?.discharge_date && (
-              <div className="flex-1 py-3.5 rounded-2xl border border-slate-200 text-slate-400 font-bold text-[15px] text-center flex items-center justify-center gap-2">
-                <CheckCircle size={16} className="text-emerald-500" />
-                Discharged on {data.discharge_date}
-              </div>
+            {isCurrentlyDischarged && (
+              <button
+                onClick={handleAdmitPatient}
+                disabled={isAdmitting}
+                className="flex-1 py-3 rounded-xl bg-emerald-500 text-white text-[13px] font-medium text-center flex items-center justify-center gap-2 hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAdmitting ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Admitting...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw size={14} />
+                    Admit Patient
+                  </>
+                )}
+              </button>
             )}
           </div>
         </div>

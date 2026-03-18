@@ -231,7 +231,7 @@ export default function AdminPatients() {
                         </span>
                       </td>
                       <td className="py-3.5 px-5 hidden md:table-cell">
-                        {patient.discharge_date ? (
+                        {patient.is_discharged ? (
                           <span
                             className="flex items-center gap-1.5 text-slate-500 text-[12px]"
                             style={{ fontWeight: 500 }}
